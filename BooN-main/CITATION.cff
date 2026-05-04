@@ -1,0 +1,30 @@
+title: BooN
+message: if you use this software please cite with this citation
+type: software
+authors:
+  - given-names: Franck
+    family-names: Delaplace
+    email: franck.delaplace@univ-evry.fr
+    affiliation: 'Paris-Saclay University, Evry'
+    orcid: 'https://orcid.org/0000-0002-1035-7754'
+repository-code: 'https://github.com/Franck-Delaplace/BooN'
+abstract: >-
+  A software solution for Boolean network analysis including
+  controllability.
+  The distribution includes two main packages,
+  one comprising a set of methods applied to the Boolean network object
+  and the other for the graphical interface.
+  The software encompasses all the requisite features
+  for Boolean network analysis,
+  including graphical network design, interaction graph drawing,
+  model of dynamics, symbolic computation of stable states,
+  and controllability analysis. The Software  features a unique ability
+  to conduct controllability analysis.
+keywords:
+  - Boolean Network
+  - Dynamical System
+  - Genetic Network
+  - Controllability Analysis
+  - Formal Method
+version: '1.26'
+date-released: '2024-09-22'
