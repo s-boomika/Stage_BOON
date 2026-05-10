@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="icon">
+  <qresource prefix="/icon/resources">
     <file>resources/act.svg</file>
     <file>resources/none.svg</file>
     <file>resources/eye.svg</file>
@@ -28,5 +28,13 @@
     <file>resources/help.svg</file>
     <file>resources/import.svg</file>
     <file>resources/asynchronous.svg</file>
+    
+    <file>../logos/edge_plus_sign.svg</file>
+    <file>../logos/edge_minus_sign.svg</file>
+    <file>../logos/delete_sign.svg</file>
+    <file>../logos/family_color_sign.svg</file>
+    <file>../logos/zoom_in_sign.svg</file>
+    <file>../logos/zoom_out_sign.svg</file>
+    <file>../logos/rename_node_sign.svg</file>
   </qresource>
 </RCC>
