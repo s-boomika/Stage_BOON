@@ -15,6 +15,7 @@ import sys
 import os
 import math
 import re
+import numpy as np
 
 # Third-party imports: import functions only used 
 import matplotlib as mpl
@@ -31,12 +32,12 @@ from pulp import PULP_CBC_CMD
 #PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QPixmap, QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import QToolButton, QMenu, QWidget, QGridLayout, QPushButton, QWidgetAction, QMessageBox, QColorDialog
+from PyQt5.QtGui import QIcon, QPixmap, QStandardItemModel, QStandardItem, QColor, QCursor
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.uic import loadUi
-
 
 from turtle import color, pos
 from matplotlib import colors
@@ -63,13 +64,9 @@ ICON01: dict = {None: ":/icon/resources/none.svg", True: ":/icon/resources/true.
 MODELBOUND: int = 8  #Size bound of the dynamics model in terms of variables.
 LPSOLVER = PULP_CBC_CMD  #LP-Solver related to the controllability resolution. (destify)
 
-#Node names for the pattern network
-#REG: str = '\u03b1'  #lambda
-#POS: str = '\u03b2'  #alpha
-#NEG: str = '\u03bb'  #beta
-
 #Integer regular expression
 INTPAT: str = r"\s*-?[0-9]+\s*"
+
 
 
 class Boonify(QMainWindow):
@@ -119,49 +116,29 @@ class Boonify(QMainWindow):
 
         #STEP: initialize the Gui state
         self.boon = BooN()  #Current BooN
+        self.network = Network()
         self.filename = ""  #Current filename
         self.history = [None] * HSIZE  #History
         self.hindex = 0  #Index of the last BooN added in the history.
         self.hupdate = False  #Flag determining whether the history is updated.
         self.saved = True  #Flag determining whether the current BooN is saved.
+
         self.QView = None  #Widget of the View
         self.QStableStates = None  #Widget of the stable states
         self.QModel = None  #Widget of the dynamics model
         self.QControllability = None  #Widget of the controllability
-        self.graph = nx.DiGraph()  #Graph for the edition
-        self.node_positions = {}
-        self.node_labels = {}
-        self.edge_colors = {}
-        self.edge_modules = {}
+
         self.disablecallback = True  #Flag indicating whether the BooN design callback function is enabled, initially disabled (True) because the editgraph is not set up.
         self.designsize = 2.  #Size related to the EditableGraph and used for many parameters. It is modified when the window is rescaled to let the nodes and edges width invariant.
-        
-        #Selection and edge creation state
-        self.selected_nodes = set()  #Currently selected nodes
-        self.selected_edge = None
-        self.double_click_node = None  #First node in double-click edge creation
-        self.double_click_timer = None  #Timer for tracking double-clicks
-        self.drag_start_pos = None  #Position where drag started
-        self.selection_rect_start = None  #Start position for selection rectangle
-        self.dragging_nodes = False  #True while the left button is pressed on a node
-        self.is_dragging = False  #Whether we're currently dragging nodes
-        self.tracked_positions = {}  #Positions being tracked during drag (not yet committed)
+        self.zoom_factor = 1.0
+        self.edge_source = None
+        self.edge_family_colors = {}
+        self.default_edge_sign = 1   # 1 = green, -1 = red
+        self.edge_preview_target = None
+
+        self.setup_callbacks()
 
         self.display_saved_flag()  #Show the save flag in the status bar
-
-        self.actionEdgePlus.triggered.connect(lambda: self.change_edge_sign(1))
-        self.actionEdgeMinus.triggered.connect(lambda: self.change_edge_sign(-1))
-
-        self.actionRenameNode.triggered.connect(self.rename_node)
-        self.actionDelete.triggered.connect(self.delete_selection)
-        self.actionZoomIn.triggered.connect(self.zoom_in)
-        self.actionZoomOut.triggered.connect(self.zoom_out)
-
-        # Setup color menu
-        self.setup_color_menu()
-
-        #circles for family assignment
-        self.edge_family_colors = {}
 
         #STEP: Connect callback functions to Menu
         #File Management
@@ -187,7 +164,8 @@ class Boonify(QMainWindow):
         #The thread is created and started.
         self.worker = Threader()
 
-        #STEP: Initialize the Canvas for network design
+        #STEP: Initialize the Matplotlib Canvas for network design
+        self.network = Network()
         fig = plt.figure()  #plt.figure is necessary to create a manager
         manager = fig.canvas.manager
         self.canvas = FigureCanvas(fig)
@@ -195,902 +173,63 @@ class Boonify(QMainWindow):
         self.canvas.figure.subplots_adjust(left=0, bottom=0, right=1, top=1)  # Adjust the window s.t. The network fully fills it.
         self.canvas.figure.canvas.manager = manager  #Assign the manager in the canvas to be accessible by EditGraph.
 
-        #STEP: Enable key_press_event events for using EditGraph:
-        self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.canvas.setFocus()
+        # STEP: Create graph editor ON THE REAL CANVAS
+        self.graph_editor = Graph(self.canvas)
 
-        #STEP: Insert the network design figure in the main window.
+        self.graph_editor.graph_changed.connect( self.on_graph_changed )
+
+        # STEP: Insert canvas into GUI
         self.DesignCanvas.addWidget(self.canvas)
 
-        #STEP: set up network design
-        self.setup_design()
+        # STEP: Setup graph
+        self.graph_editor.setup_design(self.boon)
+
+        self.disablecallback = False
+
+        #STEP: Enable key_press_event:
+        self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.canvas.setFocus()
         
         #STEP: Connect mouse and keyboard events
-        self.canvas.mpl_connect('button_press_event', self.on_canvas_press)
-        self.canvas.mpl_connect('button_release_event', self.on_canvas_release)
-        self.canvas.mpl_connect('motion_notify_event', self.on_canvas_motion)
-        self.canvas.mpl_connect('key_press_event', self.on_key_press)
+        self.canvas.mpl_connect('button_press_event', self.graph_editor.on_canvas_press)
+        self.canvas.mpl_connect('button_release_event', self.graph_editor.on_canvas_release)
+        self.canvas.mpl_connect('motion_notify_event', self.graph_editor.on_canvas_motion)
+        self.canvas.mpl_connect('key_press_event', self.graph_editor.on_key_press)
 
-        #self.edge_creation_mode = False
-        self.edge_source = None
-        #self.ignore_next_click = False
+        #STEP: Graph actions
+        self.actionRenameNode.triggered.connect(self.graph_editor.rename_node)
+        self.actionDelete.triggered.connect(self.graph_editor.delete_selection)
+        self.actionZoomIn.triggered.connect(self.graph_editor.zoom_in)
+        self.actionZoomOut.triggered.connect(self.graph_editor.zoom_out)
 
-    #DEF: NETWORK DESIGN
-    def setup_design(self):
+        #STEP: Edge Sign actions
+        self.actionEdgePlus.triggered.connect(lambda: self.graph_editor.set_default_edge_sign(1))
+        self.actionEdgeMinus.triggered.connect(lambda: self.graph_editor.set_default_edge_sign(-1))
+
+        #STEP: Setup color menu
+        self.graph_editor.setup_color_menu(self)
+
+        # Connect action directly to opening palette
+        self.actionFamilyColor.triggered.connect(self.graph_editor.open_color_palette)
+        # setup palette (no QAction binding here anymore)
+        self.graph_editor.setup_color_menu(self)
+
+
+    def on_graph_changed(self):
         """
-        Sets up the design of the interaction graph and its visual representation. The method configures
-        node and edge properties, styles, positions, and visual elements on the canvas. It integrates
-        information from an existing interaction graph and generates an editable representation of the
-        network for visualization.
-
-        Attributes that affect the design are updated during this process, and the design callback is
-        temporarily disabled to avoid interference.
+        Synchronize Graph -> BooN when the graph editor changes.
         """
-        self.canvas.axes.clear()
-        #STEP: Creation of the pattern-network used for edge styling.
-        #To prevent its inclusion in the BooN, the variable names are strings while the other nodes are integers or symbols.
-
-        #STEP: Add  the interaction graph of the current BooN.
-        ig = self.boon.interaction_graph  #Get the IG.
-
-        self.graph = nx.DiGraph()
-        self.graph.add_nodes_from(ig.nodes())
-        self.graph.add_edges_from(ig.edges())
-
-        if hasattr(self.boon, "pos") and self.boon.pos:
-            self.node_positions = dict(self.boon.pos)
-        else:
-            self.node_positions = nx.spring_layout(self.graph)
-
-        self.node_labels = {node: str(node) for node in self.graph.nodes()}
-
-        self.edge_colors = {}
-
-        for edge in self.graph.edges():
-            sign = ig.get_edge_data(*edge).get("sign", 0)
-            self.edge_colors[edge]= SIGNCOLOR[sign]
-
-        self.redraw_graph()
-
-    def redraw_graph(self):
-        self.canvas.axes.clear()
-
-        nx.draw_networkx_nodes(self.graph, self.node_positions, node_color='antiquewhite', edgecolors='black', node_size=600, ax=self.canvas.axes)
-        nx.draw_networkx_labels(self.graph, self.node_positions, labels=self.node_labels, font_size=10, ax=self.canvas.axes)
-
-        drawn_pairs = set()
-
-        for u, v in self.graph.edges():
-
-            # Self loop
-            if u == v:
-                continue
-
-            x1, y1 = self.node_positions[u]
-            x2, y2 = self.node_positions[v]
-
-            # Opposite-direction edge exists
-            if self.graph.has_edge(v, u):
-
-                # Avoid drawing twice
-                if (v, u) in drawn_pairs:
-                    continue
-
-                dx = x2 - x1
-                dy = y2 - y1
-                length = math.hypot(dx, dy)
-
-                if length == 0:
-                    continue
-
-                # Perpendicular unit vector
-                px = -dy / length
-                py = dx / length
-
-                offset = 0.02
-
-                # Edge u -> v
-                pos1 = dict(self.node_positions)
-                pos1[u] = (x1 + px * offset, y1 + py * offset)
-                pos1[v] = (x2 + px * offset, y2 + py * offset)
-
-                nx.draw_networkx_edges(
-                    self.graph,
-                    pos1,
-                    edgelist=[(u, v)],
-                    edge_color=[self.edge_colors.get((u, v), SIGNCOLOR[0])],
-                    arrows=True,
-                    width=4,
-                    arrowsize=20,
-                    connectionstyle='arc3,rad=0.0',
-                    ax=self.canvas.axes,
-                )
-
-                # Edge v -> u
-                pos2 = dict(self.node_positions)
-                pos2[v] = (x2 - px * offset, y2 - py * offset)
-                pos2[u] = (x1 - px * offset, y1 - py * offset)
-
-                nx.draw_networkx_edges(
-                    self.graph,
-                    pos2,
-                    edgelist=[(v, u)],
-                    edge_color=[self.edge_colors.get((v, u), SIGNCOLOR[0])],
-                    arrows=True,
-                    width=4,
-                    arrowsize=20,
-                    connectionstyle='arc3,rad=0.0',
-                    ax=self.canvas.axes,
-                )
-
-                drawn_pairs.add((u, v))
-                drawn_pairs.add((v, u))
-
-            else:
-                # Normal single edge
-                nx.draw_networkx_edges(
-                    self.graph,
-                    self.node_positions,
-                    edgelist=[(u, v)],
-                    edge_color=[self.edge_colors.get((u, v), SIGNCOLOR[0])],
-                    arrows=True,
-                    width=4,
-                    arrowsize=20,
-                    connectionstyle='arc3,rad=0.0',
-                    ax=self.canvas.axes,
-                )
-
-        self_loops = [(u, v) for u, v in self.graph.edges() if u == v]
-        if self_loops:
-            self_loop_colors = [self.edge_colors.get(edge, SIGNCOLOR[0]) for edge in self_loops]
-            nx.draw_networkx_edges(
-                self.graph,
-                self.node_positions,
-                edgelist=self_loops,
-                edge_color=self_loop_colors,
-                arrows=True,
-                width=4,
-                arrowsize=20,
-                connectionstyle='arc3,rad=0.3',
-                ax=self.canvas.axes,
-            )
-        self.canvas.axes.set_xlim(0.0, 1.0)
-        self.canvas.axes.set_ylim(0.0, 1.0)
-        self.canvas.axes.set_aspect('equal', adjustable='box')
-        self.canvas.axes.set_axis_off()
-
-        # Redraw family circles
-        if hasattr(self, 'edge_family_colors'):
-            for edge, color in self.edge_family_colors.items():
-                self._draw_family_circle(edge, color)
-        
-        self.canvas.draw_idle()
-
-
-    def design(self):
-        """
-        Designs the BooN based on the events captured from the EditableGraph.
-        This function establishes consistency in the nodes and edges of the graph, processes symbolic
-        representation, determines signs and modularity of edges, and converts the interaction
-        graph (IG) to a BooN object for further utilization.
-        """
-        if self.disablecallback: 
-            return
-
-        try:
-            #DEF: Definition of the interaction graph of the network from the drawing.
-            idvar = {idt: symbols(text.get_text()) for idt, text in self.graph.node_labels.items() if isinstance(idt, int | Symbol)}
-
-            def symbolic(edge):
-                """set edges in symbolic form where node labels are symbols"""
-                return idvar[edge[0]], idvar[edge[1]]
-
-            edges = {(src, tgt) for src, tgt in self.graph.edge_colors.keys() if src in idvar and tgt in idvar}
-
-            edit_pos = self.node_positions
-            pos = {idvar[idt]: edit_pos[idt] for idt in idvar}
-
-            edge_attributes = self.edge_colors
-            signs = {}
-            for edge in edges:
-                #fallback if no stored sign
-                signs[edge] = self.boon.interaction_graph.get_edge_data(*edge, {}).get("sign", 0)
-
-            #edge_labels = self.graph.edge_label_artists
-            modules = {}
-            for edge in edges:
-                try:
-                    label = edge_labels[edge].get_text()
-                    modularity = {int(module) for module in list(label.split(" ")) if re.match(INTPAT, module)}
-
-                    if modularity:
-                        match signs[edge]:
-                            case 1:  #Positive
-                                modularity = {abs(module) for module in modularity}
-                            case -1:  #Negative
-                                modularity = {-abs(module) for module in modularity}
-                            case 0:  #undefined (both)
-                                pass
-                        modules.update({symbolic(edge): modularity})
-                    else:
-                        modules.update({symbolic(edge): {signs[edge]}})
-
-                except KeyError:  #No edge labels = no modules
-                    modules.update({symbolic(edge): {signs[edge]}})
-
-            #Convert edges symbolically for signs
-            signs = {symbolic(edge): signs[edge] for edge in signs}
-
-            #Define the ig from the editable graph
-            ig = nx.DiGraph()
-            ig.add_nodes_from(idvar.values())
-            for edge in signs:
-                ig.add_edge(edge[0], edge[1],
-                            sign=signs[edge],
-                            module=modules[edge],
-                            color=edge_attributes[edge].get_facecolor()[0:3])
-
-            #Convert the ig to BooN
-            try:
-                self.boon = BooN.from_ig(ig)
-            except ValueError:
-                pass
-
-            #Store positions
-            self.boon.pos = pos
-
-            #Update history and refresh open windows
-            self.add_history()
-            if self.hupdate:
-                self.refresh()
-
-        except Exception as e:
-            #Catch any errors during design update
-            print(f"Design error (continuing): {e}")
-            import traceback
-            traceback.print_exc()
-
-    def _get_event_xy(self, event):
-        """Return the data coordinates for a mouse event."""
-        if event.xdata is not None and event.ydata is not None:
-            return event.xdata, event.ydata
-        if event.inaxes is not None:
-            return event.inaxes.transData.inverted().transform((event.x, event.y))
-        return None, None
-
-    def on_canvas_press(self, event):
-        """
-        Handles mouse button press events on the canvas.
-            - Left-click on empty space: when dragged it starts selection rectangle or creates node
-            - Left-click on node: Select/deselect node (with Shift for multi-select) for dragging
-            - Right-click on node: Start or complete edge creation
-            - Right-click on edge: Select edge
-        """
-        
-        if event.xdata is None or event.ydata is None:
-            return
-        
-        nearest_node = self._get_nearest_node(event.xdata, event.ydata)
-        nearest_edge = self._get_nearest_edge(event.xdata, event.ydata)
-
-        #right click
-        if event.button == 3:
-            # Right-click on node: edge creation
-            if nearest_node is not None:
-                if self.edge_source is None:
-                    self.edge_source = nearest_node
-                    print(f"Edge source selected: {nearest_node}")
-                else:
-                    source = self.edge_source
-                    target = nearest_node
-
-                    self._create_edge(source, target)
-                    print(f"Created edge: {source} -> {target}")
-
-                    # RESET EDGE MODE
-                    self.edge_source = None
-                return
-            # Right-click on edge: select edge
-            if nearest_edge is not None:
-                self.selected_edge = nearest_edge
-                self.selected_nodes.clear()
-                print(f"Selected edge: {nearest_edge}")
-                return
-            
-        #left click on edge: select edge
-        if event.button == 1 and nearest_edge is not None and nearest_node is None:
-            self.selected_edge = nearest_edge
-            self.selected_nodes.clear()
-            print(f"Selected edge: {nearest_edge}")
-            return
-        
-        #left click on node: select for dragging
-        if event.button == 1 and nearest_node is not None:
-            shift_pressed = event.key is not None and 'shift' in event.key.lower()
-            self._select_node(nearest_node, shift_pressed)
-            self.selected_edge = None
-            # Set up for dragging
-            self.drag_start_pos = (event.xdata, event.ydata)
-            self.selection_rect_start = None
-            self.dragging_nodes = True
-            self.is_dragging = False
-            print(f"Selected node for dragging: {nearest_node}")
-            return
-        
-        #left click on empty space -> start selection rectangle or prepare to create node
-        if event.button == 1:
-            if nearest_node is None and nearest_edge is None:
-                # Set up for selection rectangle or node creation
-                self.selection_rect_start = (event.xdata, event.ydata)
-                self.selected_nodes.clear()
-                self.selected_edge = None
-                self.dragging_nodes = False
-                self.edge_source = None
-                return
-            
-    def on_canvas_release(self, event):
-        """Handles mouse button release events."""
-        if event.button == 1: #if left mouse click released
-            if self.is_dragging and self.tracked_positions: #If dragged, take the new positions
-                self._commit_tracked_positions()
-                self.tracked_positions.clear()
-
-            xdata = event.xdata
-            ydata = event.ydata
-            if self.selection_rect_start is not None and xdata is not None and ydata is not None:
-                # Calculate distance to check if it was a click or drag
-                dx = xdata - self.selection_rect_start[0]
-                dy = ydata - self.selection_rect_start[1]
-                distance = math.sqrt(dx**2 + dy**2)
-                # If click was on empty space with minimal movement, create a new node
-                if distance < 0.03 and not self.selected_nodes:
-                    self._add_new_node(self.selection_rect_start[0], self.selection_rect_start[1])
-                else:
-                    # Otherwise, it's a selection rectangle
-                    self._select_nodes_in_rectangle(
-                        self.selection_rect_start[0], self.selection_rect_start[1],
-                        xdata, ydata
-                    )
-            self.selection_rect_start = None
-            self.drag_start_pos = None
-            self.dragging_nodes = False
-            self.is_dragging = False
-
-    def on_canvas_motion(self, event):
-        """Handles mouse motion events: used for dragging nodes."""
-        if event.xdata is None or event.ydata is None or not self.drag_start_pos or not self.dragging_nodes:
-            return
-        
-        if self.selected_nodes and not self.selection_rect_start:
-            #Drag selected nodes
-            dx = event.xdata - self.drag_start_pos[0]
-            dy = event.ydata - self.drag_start_pos[1]
-            if abs(dx) > 0.01 or abs(dy) > 0.01:  #Threshold to distinguish from click
-                self.is_dragging = True
-                self._track_node_positions(dx, dy)
-                self.drag_start_pos = (event.xdata, event.ydata)
-
-    def on_key_press(self, event):
-        """Handle keyboard events: Delete to remove selected nodes/edges."""
-        if event.key == 'delete':
-            self.delete_selection()
-
-    def _create_edge(self, source, target):
-        """
-        Create an edge between two nodes (including self-loops).
-            :param source: Source node
-            :param target: Target node
-        """
-        if self.graph.has_edge(source, target):
-            print(f"Edge {source} -> {target} already exists")
-            return
-        self.graph.add_edge(source, target)
-        self.edge_colors[(source, target)] = SIGNCOLOR[1]  # Default to green (positive)
-        self.selected_nodes.clear()
-        self.selected_edge = None
-        self.double_click_node = None
-        print(f"Added edge to graph: {source} -> {target}, self-loops: {[(u,v) for u,v in self.graph.edges() if u == v]}")
-        self.redraw_graph()
-        self.design()
-        print(f"Edge created: {source} -> {target}")
-
-    def _add_new_node(self, x, y):
-        """
-        Add a new node at the specified position.
-            :param x: X coordinate
-            :param y: Y coordinate
-        """
-        #Find next integer id for the new node
-        nodes = list(self.graph.nodes)
-        int_nodes = [n for n in nodes if isinstance(n, int)]
-        new_id = max(int_nodes) + 1 if int_nodes else 1
-        self.graph.add_node(new_id)
-        self.node_positions[new_id]=(x,y)
-        self.node_labels[new_id]= f"x{new_id}"
-        self.redraw_graph()
-        self.design()
-
-
-    def _delete_selected_nodes(self):
-        """Delete all selected nodes and their associated edges."""
-        if not self.selected_nodes:
-            return
-        
-        for node in list(self.selected_nodes):
-            if node in self.graph:
-                self.graph.remove_node(node)
-
-            self.node_positions.pop(node, None)
-            self.node_labels.pop(node, None)
-        self.selected_nodes.clear()
-        self.redraw_graph()
-        self.design()
-
-    def _delete_selected_edge(self):
-        if not self.selected_edge:
-            return
-
-        if self.graph.has_edge(*self.selected_edge):
-            self.graph.remove_edge(*self.selected_edge)
-        self.edge_colors.pop(self.selected_edge, None)
-        # Also remove family color if it exists
-        if hasattr(self, 'edge_family_colors'):
-            self.edge_family_colors.pop(self.selected_edge, None)
-        self.selected_edge= None
-        self.redraw_graph()
-        self.design()
-
-    def _get_nearest_node(self, x, y, threshold=0.05):
-        """
-        Find the nearest node to the given coordinates.
-            :param x: X coordinate
-            :param y: Y coordinate
-            :param threshold: Maximum distance to consider as a click on a node
-            :return: The nearest node, or None if no node is within threshold
-        """
-        min_dist = float('inf')
-        nearest = None
-        
-        for node, pos in self.node_positions.items():
-            dx= pos[0] - x
-            dy= pos[1] - y
-            dist = math.sqrt(dx * dx + dy * dy)
-            if dist < threshold and dist < min_dist:
-                nearest = node
-                min_dist = dist
-
-        return nearest
-
-    def _get_nearest_edge(self, x, y, threshold=0.025):
-        """
-        Find the nearest edge to the given coordinates.
-            :param x: X coordinate
-            :param y: Y coordinate
-            :param threshold: Maximum distance to consider as a click on an edge
-            :return: The nearest edge as (src, tgt) tuple, or None if no edge is within threshold
-        """
-        nearest_edge = None
-        min_dist = float('inf')
-        
-        for src, tgt in self.graph.edges():
-            if src == tgt:
-                x0, y0 = self.node_positions[src]
-                loop_x = x0
-                loop_y = y0 + 0.06
-                dist = math.hypot(x - loop_x, y - loop_y)
-                if dist < threshold and dist < min_dist:
-                    nearest_edge = (src, tgt)
-                    min_dist = dist
-                continue
-
-            x1, y1 = self.node_positions[src]
-            x2, y2 = self.node_positions[tgt]
-            
-            # For bidirectional edges, check curve path instead of straight line
-            if self.graph.has_edge(tgt, src):
-                dx = x2 - x1
-                dy = y2 - y1
-                length = math.hypot(dx, dy)
-                if length > 0:
-                    px = -dy / length
-                    py = dx / length
-                    offset = 0.02
-                    direction = 1 if str(src) < str(tgt) else -1
-                    ox = px * offset * direction
-                    oy = py * offset * direction
-                    x1 += ox
-                    y1 += oy
-                    x2 += ox
-                    y2 += oy
-
-            # Calculate distance for all edges (bidirectional or single)
-            dist = self._point_to_segment_distance(
-                x, y,
-                x1, y1,
-                x2, y2
-            )
-
-            if dist < threshold and dist < min_dist:
-                nearest_edge= (src, tgt)
-                min_dist=dist
-            
-        return nearest_edge
-    
-    def _select_node(self, node, shift_pressed=False):
-        """
-        Select or deselect a node.
-            :param node: The node to select/deselect
-            :param shift_pressed: If True, add/remove from selection. If False, replace selection.
-        """
-        if shift_pressed:
-            #Toggle selection
-            if node in self.selected_nodes:
-                self.selected_nodes.remove(node)
-            else:
-                self.selected_nodes.add(node)
-        else:
-            #Replace selection
-            self.selected_nodes = {node}
-        print(f"Selected nodes: {self.selected_nodes}")
-
-    def _select_nodes_in_rectangle(self, x1, y1, x2, y2):
-        """
-        Select all nodes within a rectangle defined by two points.
-            :param x1, y1: First corner
-            :param x2, y2: Second corner
-        """
-        if self.graph is None:
-            return
-        
-        #Normalize rectangle coordinates
-        min_x, max_x = min(x1, x2), max(x1, x2)
-        min_y, max_y = min(y1, y2), max(y1, y2)
-        
-        positions = self.graph.node_positions
-        for node, pos in positions.items():
-            if isinstance(node, int) or isinstance(node, Symbol):  #Only user nodes, not pattern nodes
-                if min_x <= pos[0] <= max_x and min_y <= pos[1] <= max_y:
-                    self.selected_nodes.add(node)
-        print(f"Selected nodes (rectangle): {self.selected_nodes}")
-
-    def _handle_double_click(self, node):
-        """
-        Handle double-click on a node for edge creation.
-        Allows creating edges between any two nodes (including self-loops).
-            :param node: The node that was double-clicked
-        """
-        if node is None:
-            return #to guard first against weird states
-        if self.double_click_node is None:
-            self.double_click_node = node #First node selected
-            print(f"Edge creation: First node selected: {node}")
-        else:
-            source = self.double_click_node   #Second node selected - create edge
-            target = node
-            self._create_edge(source, target)
-            self.double_click_node = None
-            print(f"Edge created: {source} -> {target}")
-
-    def _track_node_positions(self, dx, dy):
-        """
-        Track position changes without redrawing (used during drag).
-        Stores positions for later commit.
-            :param dx: Change in x
-            :param dy: Change in y
-        """
-        #Update tracked positions
-        for node in self.selected_nodes:
-            if node in self.node_positions:
-                x, y = self.node_positions[node]
-                self.node_positions[node] = (x + dx, y + dy)
-        self.redraw_graph()
-
-    def _commit_tracked_positions(self):
-        """
-        Commit the tracked positions to the boon model and update the design.
-        """
-        # Update boon positions
-        if hasattr(self.boon, 'pos') and self.boon.pos is not None:
-            for node in self.selected_nodes:
-                if node in self.node_positions:
-                    self.boon.pos[node] = self.node_positions[node]
-        
-        # Update the design
-        self.design()
-        print(f"Committed positions for nodes: {self.selected_nodes}")
-
-
-    def _move_selected_nodes(self, dx, dy):
-        """
-        Move all selected nodes by the given delta.
-            :param dx: Change in x
-            :param dy: Change in y
-        """
-        if not self.selected_nodes or self.graph is None:
-            return
-        positions = dict(self.graph.node_positions)
-        for node in self.selected_nodes:
-            if node in positions:
-                x, y = positions[node]
-                positions[node] = (x + dx, y + dy)
-        #Update the boon positions
-        for node in self.selected_nodes:
-            if isinstance(node, Symbol) or isinstance(node, int):
-                if hasattr(self.boon, 'pos') and node in self.boon.pos:
-                    x, y = self.boon.pos[node]
-                    self.boon.pos[node] = (x + dx, y + dy)
-        self._redraw_graph(positions)
-        
-
-    def rename_node(self):
-        """
-        Opens a dialog to rename the currently selected node.
-        """
-        if not self.selected_nodes: #if no node is selected for renaming, show error
-            QMessageBox.warning(self, "No Selection", "Please select a node to rename.")
-            return
-        if len(self.selected_nodes) > 1: #if multiple nodes is selected for renaming, show error
-            QMessageBox.warning(self, "Multiple Selection", "Please select only one node to rename.")
-            return
-    
-        node = list(self.selected_nodes)[0] #get the selected node
-        old_name = self.node_labels.get(node, str(node)) #get current label from node_labels
-    
-        #Show input dialog
-        new_name, ok = QInputDialog.getText(
-            self,
-            "Rename Node",
-            f"Enter new name for node '{old_name}':",
-            text=old_name
+        self.boon = self.network.graph_to_boon(
+            self.graph_editor,
+            current_boon=self.boon
         )
-    
-        if ok and new_name and new_name != old_name: #check if new name is valid and different from old name
-            self.node_labels[node] = new_name  #update the node label
-            self.redraw_graph()  #redraw graph with new node name
-            self.design()  #update graph with changes
+        self.add_history()
+        self.refresh()
 
-    def delete_selection(self):
-        if self.selected_nodes: #if select node
-            self._delete_selected_nodes() #delete nodes and associated edges
-            self.selected_edge=None #clear edge selection when nodes deleted
-            return
-        if self.selected_edge: #if edge selected
-            self._delete_selected_edge() #delete edge
-            self.selected_edge = None #clear edge selection after it is deleted
-            return
-        QMessageBox.warning(self, "No selection", "Please select a node or edge to delete") #if button pressed without selection, show error
-
-    def change_edge_sign(self, sign):
-        if not self.selected_edge: #if no edge selected, show error
-            QMessageBox.warning(self, "No edge selected", "Please click an edge first.")
-            return
-
-        self.edge_colors[self.selected_edge] = SIGNCOLOR[sign]
-        self.redraw_graph()
-        self.design()  # Update the model with the new sign
-
-
-    def _apply_edge_color(self, rgb):
-        edge = self.selected_edge
-        if edge not in self.edge_colors:
-            return
-        #Update visual color
-        self.edge_colors[edge] = rgb
-        self.redraw_graph()
-        #IMPORTANT: update model
-        self.design()
-
-    from PyQt5.QtWidgets import QColorDialog
-    def pick_edge_color(self):
-        if not self.selected_edge:
-            QMessageBox.warning(self, "No edge selected", "Select an edge first.")
-            return
-        color = QColorDialog.getColor()
-        if not color.isValid():
-            return
-        rgb = (color.redF(), color.greenF(), color.blueF())
-        self._apply_edge_color(rgb)
-
-    from PyQt5.QtGui import QColor
-    def set_edge_color_from_palette(self, color_name):
-        if not self.selected_edge:
-            QMessageBox.warning(self, "No edge selected", "Select an edge first.")
-            return
-        color = QColor(color_name)
-        rgb = (color.redF(), color.greenF(), color.blueF())
-        self._apply_edge_color(rgb)
-
-    from PyQt5.QtGui import QColor, QIcon, QPixmap
-    from PyQt5.QtWidgets import QToolButton, QMenu, QWidget, QGridLayout, QPushButton, QWidgetAction, QMessageBox
-    def setup_color_menu(self):
-        self.color_palette = [
-            ("Red", "#E57373"),
-            ("Green", "#81C784"),
-            ("Blue", "#64B5F6"),
-            ("Yellow", "#FFD54F"),
-            ("Purple", "#BA68C8"),
-
-            ("Pink", "#F44A82"),
-            ("Teal", "#2CD4C3"),
-            ("Indigo", "#546FF7"),
-            ("Orange", "#FFA318"),
-            ("Violet", "#7300FF"),
-
-            ("Magenta", "#FF00FF"),
-            ("Lime", "#00FF00"),
-            ("Cyan", "#00FFFF"),
-            ("Fluo Yellow", "#E1FF00"),
-            ("Orange", "#FF4800"),
-            ]
-        self.visible_colors = 5
-        self.color_menu = QMenu(self)
-        self.build_color_palette()
-        self.actionFamilyColor.setMenu(self.color_menu)
-
-        for widget in self.findChildren(QToolButton):
-            if widget.defaultAction() == self.actionFamilyColor:
-                widget.setPopupMode(QToolButton.InstantPopup)
-
-    def build_color_palette(self):
-        self.color_menu.clear()
-        palette_widget=QWidget()
-        layout=QGridLayout()
-        layout.setSpacing(5)
-        palette_widget.setLayout(layout)
-
-        for i, color_value in enumerate(self.color_palette[:self.visible_colors]):
-            button=QPushButton()
-            button.setFixedSize(32,32)
-            button.setStyleSheet(f"""
-                                 QPushButton {{
-                                 background-color: {color_value[1]};
-                                 border: 1px solid black;
-                                 border-radius: 16px;
-                                 }}
-                                 """)
-            button.clicked.connect(lambda checked, c=color_value[1]: self.set_family_color(c))
-            row=i//5
-            col=i%5
-            layout.addWidget(button, row, col)
-
-        if self.visible_colors < len(self.color_palette):
-            plus_button=QPushButton("+")
-            plus_button.setFixedSize(32,32)
-            plus_button.setStyleSheet("""
-                                      QPushButton {
-                                      font-size: 18px;
-                                      font-weight: bold;
-                                      }
-                                      """)
-            plus_button.clicked.connect(self.show_more_colors)
-            row = self.visible_colors // 5
-            col = self.visible_colors % 5
-            layout.addWidget(plus_button, row, col)
-            
-        widget_action= QWidgetAction(self.color_menu)
-        widget_action.setDefaultWidget(palette_widget)
-        self.color_menu.addAction(widget_action)
-        
-    def show_more_colors(self):
-        self.visible_colors+=5
-        self.build_color_palette()
-        self.color_menu.popup(
-            self.cursor().pos()
-        )
-
-    def set_family_color(self, color_value):
-        if not self.selected_edge:
-            QMessageBox.warning(self, "No edge selected", "Select an edge first.")
-            return
-        from PyQt5.QtGui import QColor
-        color = QColor(color_value)
-        rgb = (color.redF(), color.greenF(), color.blueF())
-
-        edge = self.selected_edge
-        if not hasattr(self, "edge_family_colors"):
-            self.edge_family_colors = {}
-
-        self.edge_family_colors[edge] = rgb
-        # Redraw to show the family circle
-        self.redraw_graph()
-        self.design()  # Update the model
-
-    def _point_to_segment_distance(self, px, py, x1, y1, x2, y2):
-        """
-        Calculate the perpendicular distance from a point to a line segment.
-            :param px, py: Point coordinates
-            :param x1, y1: Start of line segment
-            :param x2, y2: End of line segment
-            :return: Distance from point to line segment
-        """
-        #Vector from start to end of segment
-        dx = x2 - x1
-        dy = y2 - y1
-        if dx == 0 and dy == 0:
-            #Segment is a point
-            return math.hypot(px - x1, py - y1)
-        #Parameter t for projection of point onto line
-        t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)))
-        #Closest point on segment
-        closest_x = x1 + t * dx
-        closest_y = y1 + t * dy
-
-        return math.hypot(px - closest_x, py - closest_y)
-
-    def _draw_family_circle(self, edge, rgb):
-        if self.graph is None:
-            return
-        if edge not in self.graph.edges():
-            return
-
-        pos = self.node_positions
-        if edge[0] not in pos or edge[1] not in pos:
-            return
-
-        x1, y1 = pos[edge[0]]
-        x2, y2 = pos[edge[1]]
-
-        # midpoint of edge
-        x = (x1 + x2) / 2
-        y = (y1 + y2) / 2
-
-        # Offset (so it doesn't sit on the line)
-        dx = x2 - x1
-        dy = y2 - y1
-        norm_val = (dx**2 + dy**2)**0.5 or 1
-
-        offset = 0.015 * self.designsize
-        ox = -dy / norm_val * offset
-        oy = dx / norm_val * offset
-
-        circle = plt.Circle((x + ox, y + oy), 0.005 * self.designsize, color=rgb, zorder=10)
-        
-        self.canvas.axes.add_patch(circle)
-
-
-    def zoom_in(self):
-        self.designsize *= 1.2
-        self._apply_zoom()
-
-    def zoom_out(self):
-        self.designsize *= 0.8
-        self._apply_zoom()
-
-    def reset_zoom(self):
-        self.designsize = 2.0
-        self._apply_zoom()
-
-    """
-    def resizeEvent(self, event, **kwargs):
-        #Adjusts the current graphical interface parameters and components based on a resize event. It retrieves the
-        #existing graphical configurations, calculates appropriate scaling values, and reconfigures the graphical
-        #elements accordingly to maintain visual and functional consistency.
-        #    :param event: Resize event triggering the adjustment process.
-        #    :type event: QResizeEvent
-        #    :param kwargs: Additional keyword arguments that might be required for expansion or specific functionality.
-        #    :type kwargs: dict
-        #    :return: None 
-        #STEP: Fix the size related to the network design
-        width = self.frameGeometry().width()
-        height = self.frameGeometry().height()
-        self.designsize = min(round(1350 / min(width, height), 1), 2.5)  #heuristic function providing the designsize w.r.t. to window size.
-
-        #STEP: retrieve all parameters of editgraph
-        positions = self.graph.node_positions
-        edge_color = {edge: self.graph.edge_colors[edge].get_facecolor() for edge in self.graph.edge_colors}
-        #modules = {edge: self.graph.edge_label_artists[edge].get_text() for edge in self.graph.edge_label_artists}
-        node_labels = {idt: text.get_text() for idt, text in self.graph.node_labels.items()}
-
-        #STEP: Define a new Editable graph with size updated.
-        g = nx.DiGraph()
-        g.add_nodes_from(self.graph.nodes)
-        g.add_edges_from(self.graph.edges)
-
-        self.canvas.axes.clear()
-        #WARNING : the definition of EditableGraph is the same as the definition in setup_design function. Any modification of one must be reported to the other.
-        self.graph
-        self.node_positions
-    """
+    def setup_callbacks(self):
+        # connect UI signals here
+        if hasattr(self, "graph_editor"):
+            self.graph_editor.graph_changed.connect(self.on_graph_changed)
 
     #DEF: FILE MANAGEMENT
     def open(self):
@@ -1413,8 +552,1159 @@ class Boonify(QMainWindow):
         else:
             self.statusBar().showMessage(NOTSAVED)
 
-# DEF:  WIDGET CLASSES
 
+class Graph(QObject):
+    graph_changed = pyqtSignal()
+
+    def __init__(self, canvas):
+        super().__init__()
+        self.canvas = canvas
+        self.axes = canvas.axes
+        self.graph = nx.DiGraph()
+        self.node_positions = {}
+        self.node_labels = {}
+        self.edge_colors = {}
+        self.selected_nodes = set()
+        self.selected_edge = None
+        self.zoom_factor = 1.0
+        self.edge_family_colors = {}
+
+        self.double_click_node = None
+        self.edge_preview = None
+        self.edge_source = None
+        self.tracked_positions = {}
+        self.drag_start_pos = None
+        self.selection_rect_start = None
+        self.dragging_nodes = False
+        self.is_dragging = False
+
+    """
+    Model / Logic
+    """
+    #DEF: NETWORK DESIGN
+    def setup_design(self, boon):
+        """
+        Sets up the design of the interaction graph and its visual representation. The method configures
+        node and edge properties, styles, positions, and visual elements on the canvas. It integrates
+        information from an existing interaction graph and generates an editable representation of the
+        network for visualization.
+        Attributes that affect the design are updated during this process, and the design callback is
+        temporarily disabled to avoid interference.
+        """
+        self.boon = boon
+        self.canvas.axes.clear()
+        self.SIGNCOLOR = SIGNCOLOR
+        #STEP: Creation of the pattern-network used for edge styling.
+        #To prevent its inclusion in the BooN, the variable names are strings while the other nodes are integers or symbols.
+        #STEP: Add  the interaction graph of the current BooN.
+        ig = boon.interaction_graph  #Get the IG.
+        self.graph = nx.DiGraph()
+        self.graph.add_nodes_from(ig.nodes())
+        self.graph.add_edges_from(ig.edges())
+
+        self.node_positions = getattr(boon, "pos", None) or nx.spring_layout(self.graph)
+        self.node_labels = {node: str(node) for node in self.graph.nodes()}
+        
+        self.edge_colors = {}
+        for edge in self.graph.edges():
+            sign = ig.get_edge_data(*edge).get("sign", 0)
+            self.edge_colors[edge]= self.SIGNCOLOR[sign]
+
+        self.redraw_graph()
+
+    def _track_node_positions(self, dx, dy):
+        """
+        Track position changes without redrawing (used during drag).
+        Stores positions for later commit.
+            :param dx: Change in x
+            :param dy: Change in y
+        """
+        #Update tracked positions
+        for node in self.selected_nodes:
+            if node in self.node_positions:
+                x, y = self.node_positions[node]
+                self.node_positions[node] = (x + dx, y + dy)
+
+        self.redraw_graph()
+
+    def _commit_tracked_positions(self):
+        """
+        Commit the tracked positions to the boon model and update the design.
+        """
+        # Update boon positions
+        if hasattr(self.boon, 'pos') and hasattr(self.boon, "pos"):
+            for node in self.selected_nodes:
+                if node in self.node_positions:
+                    self.boon.pos[node] = self.node_positions[node]
+       
+        self.redraw_graph()
+        print(f"Committed positions for nodes: {self.selected_nodes}")
+
+    def _apply_edge_color(self, rgb):
+        if not self.selected_edge:
+            return
+        #Update visual color
+        self.edge_colors[self.selected_edge] = rgb
+        self.redraw_graph()
+
+    def change_edge_sign(self, sign):
+        if not self.selected_edge: #if no edge selected, show error
+            QMessageBox.warning(None, "No edge selected", "Please click an edge first.")
+            return
+        
+        self.edge_colors[self.selected_edge] = self.SIGNCOLOR[sign]
+        self.redraw_graph()
+
+    def set_default_edge_sign(self, sign):
+        self.default_edge_sign = sign
+        print(f"Default edge sign set to {sign}")
+
+    def _add_new_node(self, x, y):
+        #Add a new node at the specified position.
+        #    :param x: X coordinate
+        #    :param y: Y coordinate
+        #Find next integer id for the new node
+        nodes = list(self.graph.nodes)
+        int_nodes = [n for n in nodes if isinstance(n, int)]
+        new_id = max(int_nodes) + 1 if int_nodes else 1
+        self.graph.add_node(new_id)
+        self.node_positions[new_id]=(x,y)
+        self.node_labels[new_id]= f"x{new_id}"
+        self.redraw_graph()
+        self.graph_changed.emit()
+
+    def _create_edge(self, source, target):
+        """
+        Create an edge between two nodes (including self-loops).
+            :param source: Source node
+            :param target: Target node
+        """
+        # clear preview safely first
+        self._clear_edge_preview()
+
+        if source is None or target is None:
+            return
+
+        if self.graph.has_edge(source, target):
+            print(f"Edge {source} -> {target} already exists")
+            return
+        self.graph.add_edge(source, target)
+        self.edge_family_colors[(source, target)] = (1.0, 1.0, 1.0)
+        self.edge_colors[(source, target)] = self.SIGNCOLOR[self.default_edge_sign]  # Default to button chosen 
+        self.selected_nodes.clear()
+        self.selected_edge = None
+        self.double_click_node = None
+        print(f"Added edge to graph: {source} -> {target}, self-loops: {[(u,v) for u,v in self.graph.edges() if u == v]}")
+        self.redraw_graph()
+        self.graph_changed.emit()
+        print(f"Edge created: {source} -> {target}")
+
+    """
+    View
+    """
+    def _draw_nodes(self):
+        nx.draw_networkx_nodes(
+            self.graph, 
+            self.node_positions, 
+            node_color='antiquewhite', 
+            edgecolors='black', 
+            node_size=600, 
+            ax=self.canvas.axes
+            )
+        
+    def _draw_labels(self):
+        nx.draw_networkx_labels(
+            self.graph, 
+            self.node_positions, 
+            labels=self.node_labels, 
+            font_size=10, 
+            ax=self.canvas.axes
+            )
+        
+    def _draw_edges(self):
+        drawn_pairs = set()
+        for u, v in self.graph.edges():
+            # Self loop
+            if u == v:
+                continue
+            # Bi-directional edge 
+            if self.graph.has_edge(v, u):
+                # Avoid drawing twice
+                if (v, u) in drawn_pairs:
+                    continue
+                self._draw_bidirectional_edges(u, v)
+                drawn_pairs.add((u, v))
+                drawn_pairs.add((v, u))
+            else:
+                self._draw_normal_edge(u, v)
+
+    def _draw_normal_edge(self, u, v):
+        nx.draw_networkx_edges(
+            self.graph,
+            self.node_positions,
+            edgelist=[(u, v)],
+            edge_color=[self.edge_colors.get((u, v), self.SIGNCOLOR[0])],
+            arrows=True,
+            width=4,
+            arrowsize=15,
+            #connectionstyle='arc3,rad=0.0',
+            ax=self.canvas.axes,
+            )
+            
+    def _draw_bidirectional_edges(self, u, v):
+        x1, y1 = self.node_positions[u]
+        x2, y2 = self.node_positions[v]
+        dx = x2 - x1
+        dy = y2 - y1
+        length = math.hypot(dx, dy)
+        if length == 0:
+            return 
+        
+        # Perpendicular unit vector
+        px = -dy / length
+        py = dx / length
+        offset = 0.02 
+        
+        # Edge u -> v
+        pos1 = dict(self.node_positions)
+        pos1[u] = (x1 + px * offset, y1 + py * offset)
+        pos1[v] = (x2 + px * offset, y2 + py * offset)
+        nx.draw_networkx_edges(
+            self.graph,
+            pos1,
+            edgelist=[(u, v)],
+            edge_color=[self.edge_colors.get((u, v), self.SIGNCOLOR[0])],
+            arrows=True,
+            width=4,
+            arrowsize=15,
+            #connectionstyle='arc3,rad=0.0',
+            ax=self.canvas.axes,
+        )
+
+        # Edge v -> u
+        pos2 = dict(self.node_positions)
+        pos2[v] = (x2 - px * offset, y2 - py * offset)
+        pos2[u] = (x1 - px * offset, y1 - py * offset)
+        nx.draw_networkx_edges(
+            self.graph,
+            pos2,
+            edgelist=[(v, u)],
+            edge_color=[self.edge_colors.get((v, u), self.SIGNCOLOR[0])],
+            arrows=True,
+            width=4,
+            arrowsize=15,
+            #connectionstyle='arc3,rad=0.0',
+            ax=self.canvas.axes,
+        )
+        
+    def _draw_self_loops(self):
+        from matplotlib.patches import FancyArrowPatch
+
+        for u, v in self.graph.edges():
+            if u != v:
+                continue
+
+            x, y = self.node_positions[u]
+            offset = 0.03  # adjust
+            loop = FancyArrowPatch(
+                (x - offset, y),   # start
+                (x + offset, y),  # tiny offset so it doesn't collapse
+                connectionstyle="arc3, rad=2.8",  # controls loop shape
+                arrowstyle="-|>",   # 👈 THIS adds arrow head
+                mutation_scale=15,   # arrow head size
+                linewidth=3,
+                color=self.edge_colors.get((u, v), "black"),
+                zorder=10
+            )
+
+            self.axes.add_patch(loop)
+
+    def _draw_family_circle(self, edge, rgb):
+        if not self.edge_family_colors:
+            return
+
+        for edge, color in self.edge_family_colors.items():
+            if edge not in self.graph.edges():
+                continue
+
+            u, v = edge
+
+            # SELF-LOOP HANDLING FIX
+            if u == v:
+                x0, y0 = self.node_positions[u]
+
+                radius = 0.08  # MUST match self-loop drawing
+                theta = np.linspace(0, 2 * np.pi, 200)
+
+                # full loop points (same geometry idea as arc3 rad)
+                xs = x0 + radius * np.cos(theta)
+                ys = y0 + radius * np.sin(theta)
+
+                # take midpoint of loop (top of loop visually)
+                mid_idx = len(theta) // 4   # top-ish point (more visually centered than exact half)
+                cx, cy = xs[mid_idx], ys[mid_idx]
+
+                cy -= 0.15
+
+                circle = plt.Circle(
+                    (cx, cy),
+                    0.015,
+                    color=color,
+                    zorder=20
+                )
+                self.axes.add_patch(circle)
+                continue
+
+            # NORMAL EDGE CASE
+            x1, y1 = self.node_positions[u]
+            x2, y2 = self.node_positions[v]
+
+            dx = x2 - x1
+            dy = y2 - y1
+            norm = math.hypot(dx, dy) or 1
+
+            #midpoint
+            mx = (x1 + x2) / 2
+            my = (y1 + y2) / 2
+
+            #default no offset
+            ox = 0
+            oy = 0
+
+            #if bidirectional
+            if self.graph.has_edge(v, u):
+                px = -dy / norm
+                py = dx / norm
+                offset = 0.02
+
+                direction = 1 if str(u) < str(v) else -1
+
+                ox = px * offset * direction
+                oy = py * offset * direction
+
+            circle = plt.Circle((mx + ox, my + oy), 0.01, color=color, zorder=20)
+            self.axes.add_patch(circle)
+    
+    def _apply_zoom(self):
+        """
+        Apply zoom centered on the canvas.
+        """
+        ax = self.canvas.axes
+        center_x = 0.5
+        center_y = 0.5
+        base_width = 1.0
+        base_height = 1.0
+        width = base_width / self.zoom_factor
+        height = base_height / self.zoom_factor
+        ax.set_xlim(center_x - width / 2, center_x + width / 2)
+        ax.set_ylim(center_y - height / 2, center_y + height / 2)
+
+    def _draw_family_circles(self):
+        for edge, color in self.edge_family_colors.items():
+            WHITE = (1.0, 1.0, 1.0)
+            if tuple(color) == WHITE:
+                continue  # don't draw white family
+
+            if edge not in self.graph.edges():
+                continue
+
+            self._draw_family_circle(edge, color)
+
+    def _draw_edge_preview(self, x1, y1, x2, y2):
+        # ALWAYS clear first
+        if self.edge_preview is not None:
+            try:
+                self.edge_preview.remove()
+            except Exception:
+                pass
+            self.edge_preview = None
+
+        # draw new preview
+        (self.edge_preview,) = self.axes.plot(
+            [x1, x2],
+            [y1, y2],
+            linestyle="dashed",
+            linewidth=2,
+            color="gray",
+            alpha=0.8,
+            zorder=1000,
+        )
+
+        # CRITICAL: force immediate render (not draw_idle)
+        self.canvas.draw()
+    
+    def _clear_edge_preview(self):
+        if self.edge_preview is not None:
+            try:
+                self.edge_preview.remove()
+            except Exception:
+                pass
+            self.edge_preview = None
+            self.canvas.draw_idle()
+
+    def redraw_graph(self):
+        # store preview endpoints before clearing
+        preview = self.edge_preview
+        preview_data = None
+        if preview is not None:
+            try:
+                xdata = preview.get_xdata()
+                ydata = preview.get_ydata()
+                preview_data = (xdata, ydata)
+            except Exception:
+                preview_data = None
+        self.axes.clear()
+        self._draw_nodes()
+        self._draw_labels()
+        self._draw_edges()
+        self._draw_self_loops()
+        self._draw_family_circles()
+        self._apply_zoom()
+        # recreate preview properly (IMPORTANT FIX)
+        if preview_data is not None:
+            self.edge_preview = self.axes.plot(
+                preview_data[0],
+                preview_data[1],
+                linestyle="dashed",
+                linewidth=2,
+                color="gray",
+                alpha=0.7,
+                zorder=1000
+            )[0]
+        else:
+            self.edge_preview = None
+        self.canvas.draw()
+        self.canvas.axes.set_axis_off()
+        
+    
+    """
+    Controller (events)
+    """
+    def on_canvas_press(self, event):
+        """
+        Handles mouse button press events on the canvas.
+            - Left-click on empty space: when dragged it starts selection rectangle or creates node
+            - Left-click on node: Select/deselect node (with Shift for multi-select) for dragging
+            - Right-click on node: Start or complete edge creation
+            - Right-click on edge: Select edge
+        """
+        # cancel edge preview if clicking empty space with right click
+        if event.button == 3 and self.edge_source is not None:
+            nearest_node = self._get_nearest_node(event.xdata, event.ydata)
+            if nearest_node is None:
+                self.edge_source = None
+                self._clear_edge_preview()
+                return
+        if event.xdata is None or event.ydata is None:
+            return
+        nearest_node = self._get_nearest_node(event.xdata, event.ydata)
+        nearest_edge = self._get_nearest_edge(event.xdata, event.ydata)
+        #right click
+        if event.button == 3:
+            # Right-click on node: edge creation
+            if nearest_node is not None:
+                if self.edge_source is None:
+                    self.edge_source = nearest_node
+                    print(f"Edge source selected: {nearest_node}")
+                else:
+                    source = self.edge_source
+                    target = nearest_node
+                    self._create_edge(source, target)
+                    print(f"Created edge: {source} -> {target}")
+                    # RESET EDGE MODE
+                    self.edge_source = None
+                return
+            # Right-click on edge: select edge
+            if nearest_edge is not None:
+                self.selected_edge = nearest_edge
+                self.selected_nodes.clear()
+                print(f"Selected edge: {nearest_edge}")
+                return
+        #left click on edge: select edge
+        if event.button == 1 and nearest_edge is not None and nearest_node is None:
+            self.selected_edge = nearest_edge
+            self.selected_nodes.clear()
+            print(f"Selected edge: {nearest_edge}")
+            return
+        #left click on node: select for dragging
+        if event.button == 1 and nearest_node is not None:
+            shift_pressed = event.key is not None and 'shift' in event.key.lower()
+            self._select_node(nearest_node, shift_pressed)
+            self.selected_edge = None
+            # Set up for dragging
+            self.drag_start_pos = (event.xdata, event.ydata)
+            self.selection_rect_start = None
+            self.dragging_nodes = True
+            self.is_dragging = False
+            print(f"Selected node for dragging: {nearest_node}")
+            return
+        #left click on empty space -> start selection rectangle or prepare to create node
+        if event.button == 1:
+            if nearest_node is None and nearest_edge is None:
+                # Set up for selection rectangle or node creation
+                self.selection_rect_start = (event.xdata, event.ydata)
+                self.selected_nodes.clear()
+                self.selected_edge = None
+                self.dragging_nodes = False
+                self.edge_source = None
+                return
+            
+    def on_canvas_release(self, event):
+        """Handles mouse button release events."""
+        if event.button == 1: #if left mouse click released
+            if self.is_dragging and self.tracked_positions: #If dragged, take the new positions
+                self._commit_tracked_positions()
+                self.tracked_positions.clear()
+
+            xdata = event.xdata
+            ydata = event.ydata
+            if self.selection_rect_start is not None and xdata is not None and ydata is not None:
+                # Calculate distance to check if it was a click or drag
+                dx = xdata - self.selection_rect_start[0]
+                dy = ydata - self.selection_rect_start[1]
+                distance = math.sqrt(dx**2 + dy**2)
+                # If click was on empty space with minimal movement, create a new node
+                if distance < 0.03 and not self.selected_nodes:
+                    self._add_new_node(self.selection_rect_start[0], self.selection_rect_start[1])
+                else:
+                    # Otherwise, it's a selection rectangle
+                    self._select_nodes_in_rectangle(
+                        self.selection_rect_start[0], self.selection_rect_start[1],
+                        xdata, ydata
+                    )
+            self.selection_rect_start = None
+            self.drag_start_pos = None
+            self.dragging_nodes = False
+            self.is_dragging = False
+
+    def on_canvas_motion(self, event):
+        """Handles mouse motion events: dragging nodes + edge preview."""
+
+        if event.xdata is None or event.ydata is None:
+            return
+
+        # 1. EDGE PREVIEW (highest priority)
+        if self.edge_source is not None:
+            x1, y1 = self.node_positions[self.edge_source]
+            x2, y2 = event.xdata, event.ydata
+
+            self._draw_edge_preview(x1, y1, x2, y2)
+            self.canvas.draw_idle()
+            return  # important: prevents drag conflict
+
+        # 2. NODE DRAGGING
+        if self.drag_start_pos and self.dragging_nodes and self.selected_nodes:
+
+            dx = event.xdata - self.drag_start_pos[0]
+            dy = event.ydata - self.drag_start_pos[1]
+
+            if abs(dx) > 0.01 or abs(dy) > 0.01:
+                self.is_dragging = True
+                self._track_node_positions(dx, dy)
+                self.drag_start_pos = (event.xdata, event.ydata)
+
+    def on_key_press(self, event):
+        """Handle keyboard events: Delete to remove selected nodes/edges."""
+        if event.key == 'delete':
+            self.delete_selection()    
+        if event.key == 'escape':
+            self.edge_source = None
+            self._clear_edge_preview()
+
+    def _handle_double_click(self, node):
+        """
+        Handle double-click on a node for edge creation.
+        Allows creating edges between any two nodes (including self-loops).
+            :param node: The node that was double-clicked
+        """
+        if node is None:
+            return #to guard first against weird states
+        if self.double_click_node is None:
+            self.double_click_node = node #First node selected
+            print(f"Edge creation: First node selected: {node}")
+        else:
+            source = self.double_click_node   #Second node selected - create edge
+            target = node
+            self._create_edge(source, target)
+            self.double_click_node = None
+            print(f"Edge created: {source} -> {target}")
+    """
+    UI helpers /color tools
+    """
+    def _select_node(self, node, shift_pressed=False):
+        """
+        Select or deselect a node.
+            :param node: The node to select/deselect
+            :param shift_pressed: If True, add/remove from selection. If False, replace selection.
+        """
+        if shift_pressed:
+            #Toggle selection
+            if node in self.selected_nodes:
+                self.selected_nodes.remove(node)
+            else:
+                self.selected_nodes.add(node)
+        else:
+            #Replace selection
+            self.selected_nodes = {node}
+        print(f"Selected nodes: {self.selected_nodes}")
+
+    def _select_nodes_in_rectangle(self, x1, y1, x2, y2):
+        """
+        Select all nodes within a rectangle defined by two points.
+            :param x1, y1: First corner
+            :param x2, y2: Second corner
+        """
+        if self.graph is None:
+            return
+        #Normalize rectangle coordinates
+        min_x, max_x = min(x1, x2), max(x1, x2)
+        min_y, max_y = min(y1, y2), max(y1, y2)
+        positions = self.node_positions
+        for node, pos in positions.items():
+            if isinstance(node, int) or isinstance(node, Symbol):  #Only user nodes, not pattern nodes
+                if min_x <= pos[0] <= max_x and min_y <= pos[1] <= max_y:
+                    self.selected_nodes.add(node)
+        print(f"Selected nodes (rectangle): {self.selected_nodes}")
+
+    def delete_selection(self):
+        if self.selected_nodes: #if select node
+            self._delete_selected_nodes() #delete nodes and associated edges
+            self.selected_edge=None #clear edge selection when nodes deleted
+            return
+        if self.selected_edge: #if edge selected
+            self._delete_selected_edge() #delete edge
+            self.selected_edge = None #clear edge selection after it is deleted
+            return
+        QMessageBox.warning(None, "No selection", "Please select a node or edge to delete") #if button pressed without selection, show error
+    
+    def _delete_selected_nodes(self):
+        """Delete all selected nodes and their associated edges."""
+        if not self.selected_nodes:
+            return
+        for node in list(self.selected_nodes):
+            if node in self.graph:
+                self.graph.remove_node(node)
+            self.node_positions.pop(node, None)
+            self.node_labels.pop(node, None)
+
+            # remove edge colors involving this node
+            self.edge_colors = {
+                e: c for e, c in self.edge_colors.items()
+                if node not in e
+            }
+
+            if hasattr(self, "edge_family_colors"):
+                self.edge_family_colors = {
+                    e: c for e, c in self.edge_family_colors.items()
+                    if node not in e
+                }
+        self.selected_nodes.clear()
+
+        self.redraw_graph()  
+        self.graph_changed.emit()
+    
+    def _delete_selected_edge(self):
+        if not self.selected_edge:
+            return
+        if self.graph.has_edge(*self.selected_edge):
+            self.graph.remove_edge(*self.selected_edge)
+        self.edge_colors.pop(self.selected_edge, None)
+        # Also remove family color if it exists
+        if hasattr(self, 'edge_family_colors'):
+            self.edge_family_colors.pop(self.selected_edge, None)
+        self.selected_edge= None
+        self.redraw_graph()
+        self.graph_changed.emit()
+    
+    def _get_nearest_node(self, x, y, threshold=0.05):
+        """
+        Find the nearest node to the given coordinates.
+            :param x: X coordinate
+            :param y: Y coordinate
+            :param threshold: Maximum distance to consider as a click on a node
+            :return: The nearest node, or None if no node is within threshold
+        """
+        min_dist = float('inf')
+        nearest = None
+        for node, pos in self.node_positions.items():
+            dx= pos[0] - x
+            dy= pos[1] - y
+            dist = math.sqrt(dx * dx + dy * dy)
+            if dist < threshold and dist < min_dist:
+                nearest = node
+                min_dist = dist
+        return nearest
+    
+    def _get_nearest_edge(self, x, y, threshold=0.025):
+        """
+        Find the nearest edge to the given coordinates.
+            :param x: X coordinate
+            :param y: Y coordinate
+            :param threshold: Maximum distance to consider as a click on an edge
+            :return: The nearest edge as (src, tgt) tuple, or None if no edge is within threshold
+        """
+        nearest_edge = None
+        min_dist = float('inf')
+
+        for src, tgt in self.graph.edges():
+            # SELF-LOOP HANDLING FIX
+            if src == tgt:
+                x0, y0 = self.node_positions[src]
+
+                # approximate same loop shape as FancyArrowPatch(rad=2.8)
+                radius = 0.08
+
+                # sample arc points (top loop)
+                for t in np.linspace(0, 2 * np.pi, 20):
+                    cx = x0 + radius * math.cos(t)
+                    cy = y0 + radius * math.sin(t)
+
+                    dist = math.hypot(x - cx, y - cy)
+
+                    if dist < threshold and dist < min_dist:
+                        nearest_edge = (src, tgt)
+                        min_dist = dist
+
+                continue
+
+            # NORMAL EDGE HANDLING
+            x1, y1 = self.node_positions[src]
+            x2, y2 = self.node_positions[tgt]
+
+            # bidirectional offset handling
+            if self.graph.has_edge(tgt, src):
+                dx = x2 - x1
+                dy = y2 - y1
+                length = math.hypot(dx, dy)
+
+                if length > 0:
+                    px = -dy / length
+                    py = dx / length
+                    offset = 0.02
+                    direction = 1 if str(src) < str(tgt) else -1
+                    ox = px * offset * direction
+                    oy = py * offset * direction
+                    x1 += ox
+                    y1 += oy
+                    x2 += ox
+                    y2 += oy
+
+            dist = self._point_to_segment_distance(
+                x, y,
+                x1, y1,
+                x2, y2
+            )
+
+            if dist < threshold and dist < min_dist:
+                nearest_edge = (src, tgt)
+                min_dist = dist
+
+        return nearest_edge
+    
+    def _get_event_xy(self, event):
+        """Return the data coordinates for a mouse event."""
+        if event.xdata is not None and event.ydata is not None:
+            return event.xdata, event.ydata
+        if event.inaxes is not None:
+            return event.inaxes.transData.inverted().transform((event.x, event.y))
+        return None, None
+    
+    def _move_selected_nodes(self, dx, dy):
+        """
+        Move all selected nodes by the given delta.
+            :param dx: Change in x
+            :param dy: Change in y
+        """
+        if not self.selected_nodes or self.graph is None:
+            return
+        positions = dict(self.node_positions)
+        for node in self.selected_nodes:
+            if node in positions:
+                x, y = positions[node]
+                positions[node] = (x + dx, y + dy)
+        #Update the boon positions
+        for node in self.selected_nodes:
+            if isinstance(node, Symbol) or isinstance(node, int):
+                if hasattr(self.boon, 'pos') and node in self.boon.pos:
+                    x, y = self.boon.pos[node]
+                    self.boon.pos[node] = (x + dx, y + dy)
+        self._redraw_graph(positions)
+    
+    def rename_node(self):
+        """
+        Opens a dialog to rename the currently selected node.
+        """
+        if not self.selected_nodes: #if no node is selected for renaming, show error
+            QMessageBox.warning(self, "No Selection", "Please select a node to rename.")
+            return
+        if len(self.selected_nodes) > 1: #if multiple nodes is selected for renaming, show error
+            QMessageBox.warning(self, "Multiple Selection", "Please select only one node to rename.")
+            return
+        node = list(self.selected_nodes)[0] #get the selected node
+        old_name = self.node_labels.get(node, str(node)) #get current label from node_labels
+        #Show input dialog
+        new_name, ok = QInputDialog.getText(
+            self,
+            "Rename Node",
+            f"Enter new name for node '{old_name}':",
+            text=old_name
+        )
+        if ok and new_name and new_name != old_name: #check if new name is valid and different from old name
+            self.node_labels[node] = new_name  #update the node label
+            self.redraw_graph()  #redraw graph with new node name
+            self.graph_changed.emit()  #update graph with changes
+    
+    def _point_to_segment_distance(self, px, py, x1, y1, x2, y2):
+        """
+        Calculate the perpendicular distance from a point to a line segment.
+            :param px, py: Point coordinates
+            :param x1, y1: Start of line segment
+            :param x2, y2: End of line segment
+            :return: Distance from point to line segment
+        """
+        #Vector from start to end of segment
+        dx = x2 - x1
+        dy = y2 - y1
+        if dx == 0 and dy == 0:
+            #Segment is a point
+            return math.hypot(px - x1, py - y1)
+        #Parameter t for projection of point onto line
+        t = max(0, min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)))
+        #Closest point on segment
+        closest_x = x1 + t * dx
+        closest_y = y1 + t * dy
+        return math.hypot(px - closest_x, py - closest_y)
+    
+    def zoom_in(self):
+        self.zoom_factor *= 1.2
+        self.redraw_graph()
+    
+    def zoom_out(self):
+        self.zoom_factor /= 1.2
+        self.redraw_graph()
+    
+    def reset_zoom(self):
+        self.zoom_factor = 1.0
+        self.redraw_graph()
+    
+    def pick_edge_color(self):
+        if not self.selected_edge:
+            QMessageBox.warning(self, "No edge selected", "Select an edge first.")
+            return
+        color = QColorDialog.getColor()
+        if not color.isValid():
+            return
+        rgb = (color.redF(), color.greenF(), color.blueF())
+        self._apply_edge_color(rgb)
+
+    def set_edge_color_from_palette(self, color_name):
+        if not self.selected_edge:
+            QMessageBox.warning(None, "No edge selected", "Select an edge first.")
+            return
+        color = QColor(color_name)
+        rgb = (color.redF(), color.greenF(), color.blueF())
+        if not hasattr(self, "edge_family_colors"):
+            self.edge_family_colors = {}
+
+        edge = self.selected_edge
+
+        self.edge_family_colors[edge] = rgb
+        #self._apply_edge_color(rgb)
+
+        self.redraw_graph()
+        self.graph_changed.emit()
+
+    def setup_color_menu(self, parent):
+        self.color_palette = [
+            ("Red", "#E57373"),
+            ("Green", "#81C784"),
+            ("Blue", "#64B5F6"),
+            ("Yellow", "#FFD54F"),
+            ("Purple", "#BA68C8"),
+            ("Pink", "#F44A82"),
+            ("Teal", "#2CD4C3"),
+            ("Indigo", "#546FF7"),
+            ("Orange", "#FFA318"),
+            ("Violet", "#7300FF"),
+            ("Magenta", "#FF00FF"),
+            ("Lime", "#00FF00"),
+            ("Cyan", "#00FFFF"),
+            ("Fluo Yellow", "#E1FF00"),
+            ("Orange", "#FF4800"),
+            ]
+        self.visible_colors = 5
+        self.color_menu = QMenu(parent)
+        self.build_color_palette()
+
+    def open_color_palette(self):
+        """Directly open the palette at mouse position"""
+        if not hasattr(self, "color_menu"):
+            return
+
+        self.build_color_palette()
+        self.color_menu.popup(QCursor.pos())
+
+    def build_color_palette(self):
+        self.color_menu.clear()
+        palette_widget=QWidget()
+        layout=QGridLayout()
+        layout.setSpacing(5)
+        palette_widget.setLayout(layout)
+        for i, (name, hex_color) in enumerate(self.color_palette[:self.visible_colors]):
+            button=QPushButton()
+            button.setFixedSize(32,32)
+            button.setStyleSheet(f""" QPushButton {{ background-color: {hex_color}; border: 1px solid black; border-radius: 16px; }} """)
+            button.clicked.connect(lambda _, c=hex_color: self.set_edge_color_from_palette(c))
+            row=i//5
+            col=i%5
+            layout.addWidget(button, row, col)
+        if self.visible_colors < len(self.color_palette):
+            plus_button=QPushButton("+")
+            plus_button.setFixedSize(32,32)
+            plus_button.setStyleSheet("""QPushButton {font-size: 18px; font-weight: bold; } """)
+            plus_button.clicked.connect(self.show_more_colors)
+            row = self.visible_colors // 5
+            col = self.visible_colors % 5
+            layout.addWidget(plus_button, row, col)
+        if self.visible_colors > 5:
+            minus_button = QPushButton("-")
+            minus_button.setFixedSize(32, 32)
+            minus_button.setStyleSheet("""QPushButton {font-size: 18px; font-weight: bold;} """)
+            minus_button.clicked.connect(self.show_less_colors)
+            row = self.visible_colors // 5
+            col = self.visible_colors 
+            layout.addWidget(minus_button, row, col)
+        widget_action= QWidgetAction(self.color_menu)
+        widget_action.setDefaultWidget(palette_widget)
+        self.color_menu.addAction(widget_action)
+
+    def show_more_colors(self):
+        self.visible_colors+=5
+        self.build_color_palette()
+        self.color_menu.popup(QCursor().pos())
+
+    def show_less_colors(self):
+        self.visible_colors = max(5, self.visible_colors - 5)
+        self.build_color_palette()
+        self.color_menu.popup(QCursor.pos())
+
+    def set_family_color(self, color_value):
+        if not self.selected_edge:
+            QMessageBox.warning(self, "No edge selected", "Select an edge first.")
+            return
+        color = QColor(color_value)
+        rgb = (color.redF(), color.greenF(), color.blueF())
+        if not hasattr(self, "edge_family_colors"):
+            self.edge_family_colors = {}
+        edge = self.selected_edge
+        self.edge_family_colors[edge] = rgb
+        # Redraw to show the family circle
+        self.redraw_graph()
+        self.graph_changed.emit()  # Update the model
+
+    def design(self):
+        """
+        Designs the BooN based on the events captured from the EditableGraph.
+        This function establishes consistency in the nodes and edges of the graph, processes symbolic
+        representation, determines signs and modularity of edges, and converts the interaction
+        graph (IG) to a BooN object for further utilization.
+        """
+        try:
+            #DEF: Definition of the interaction graph of the network from the drawing.
+            idvar = {idt: symbols(text.get_text()) for idt, text in boonify.graph_editor.node_labels.items() if isinstance(idt, (int, Symbol))}
+
+            def symbolic(edge):
+                """set edges in symbolic form where node labels are symbols"""
+                return idvar[edge[0]], idvar[edge[1]]
+
+            edges = {(src, tgt) for src, tgt in self.edge_colors.keys() if src in idvar and tgt in idvar}
+
+            edit_pos = self.node_positions
+            pos = {idvar[idt]: edit_pos[idt] for idt in idvar}
+
+            edge_attributes = self.edge_colors
+            signs = {}
+            for edge in edges:
+                #fallback if no stored sign
+                signs[edge] = self.boon.interaction_graph.get_edge_data(*edge, {}).get("sign", 0)
+
+            modules = {}
+
+            for edge in edges:
+                sign = signs[edge]
+                modules[symbolic(edge)] = {sign}
+
+            #Convert edges symbolically for signs
+            signs = {symbolic(edge): signs[edge] for edge in signs}
+
+            #Define the ig from the editable graph
+            ig = nx.DiGraph()
+            ig.add_nodes_from(idvar.values())
+            for edge in signs:
+                ig.add_edge(edge[0], edge[1],
+                            sign=signs[edge],
+                            module=modules[edge],
+                            color=edge_attributes[edge].get_facecolor()[0:3])
+
+            #Convert the ig to BooN
+            try:
+                self.boon = BooN.from_ig(ig)
+            except ValueError:
+                pass
+
+            #Store positions
+            self.boon.pos = pos
+
+        except Exception as e:
+            #Catch any errors during design update
+            print(f"Design error (continuing): {e}")
+            import traceback
+            traceback.print_exc()
+
+
+
+class Network:
+    """
+    Conversion layer between Graph and BooN.
+    No UI, Qt, refresh/history logic.
+    """
+    def __init__(self):
+        self.boon = BooN()
+
+    def graph_to_boon(self, graph_editor, current_boon = None):
+        """
+        Convert Graph into BooN.
+        """
+        graph = graph_editor.graph
+
+        # Build symbol mapping
+        id_to_symbol = {}
+
+        for node_id, label in graph_editor.node_labels.items():
+
+            if isinstance(label, str):
+                label = label.strip()
+
+            if not label:
+                label = f"x{node_id}"
+
+            id_to_symbol[node_id] = symbols(label)
+
+        # Build interaction graph
+        ig = nx.DiGraph()
+
+        for symbol in id_to_symbol.values():
+            ig.add_node(symbol)
+
+        # Add edges
+        for edge in graph.edges():
+
+            src, tgt = edge
+
+            if src not in id_to_symbol:
+                continue
+
+            if tgt not in id_to_symbol:
+                continue
+
+            src_symbol = id_to_symbol[src]
+            tgt_symbol = id_to_symbol[tgt]
+
+            sign = self._extract_edge_sign(edge, graph_editor)
+
+            color = graph_editor.edge_colors.get(edge, (0, 0, 0))
+
+            module = {sign}
+
+            ig.add_edge(
+                src_symbol,
+                tgt_symbol,
+                sign=sign,
+                module=module,
+                color=color
+            )
+
+        # Build BooN
+        try:
+            boon = BooN.from_ig(ig)
+
+        except ValueError:
+            if current_boon is not None:
+                boon = current_boon.copy()
+            else:
+                boon = BooN()
+
+        # Store positions
+        boon.pos = {}
+
+        for node_id, position in graph_editor.node_positions.items():
+
+            if node_id in id_to_symbol:
+                boon.pos[id_to_symbol[node_id]] = position
+
+        return boon
+
+    def boon_to_graph(self, boon, graph_editor):
+        """
+        Populate graph editor from BooN.
+        """
+        ig = boon.interaction_graph
+
+        graph_editor.graph.clear()
+
+        graph_editor.node_positions.clear()
+        graph_editor.node_labels.clear()
+        graph_editor.edge_colors.clear()
+
+        symbol_to_id = {}
+
+        # Nodes
+        for index, node in enumerate(ig.nodes(), start=1):
+
+            symbol_to_id[node] = index
+
+            graph_editor.graph.add_node(index)
+
+            graph_editor.node_labels[index] = str(node)
+
+            if hasattr(boon, "pos") and node in boon.pos:
+                graph_editor.node_positions[index] = boon.pos[node]
+            else:
+                graph_editor.node_positions[index] = (0.0, 0.0)
+
+        # Edges
+        for src, tgt, data in ig.edges(data=True):
+
+            src_id = symbol_to_id[src]
+            tgt_id = symbol_to_id[tgt]
+
+            graph_editor.graph.add_edge(src_id, tgt_id)
+
+            sign = data.get("sign", 0)
+
+            graph_editor.edge_colors[(src_id, tgt_id)] = graph_editor.SIGNCOLOR.get(sign, "black")
+
+        graph_editor.redraw_graph()
+
+    #helper
+    def _extract_edge_sign(self, edge, graph_editor):
+        """
+        Convert edge color -> logical sign.
+        """
+
+        color = graph_editor.edge_colors.get(edge)
+
+        if color == graph_editor.SIGNCOLOR[1]:
+            return 1
+
+        if color == graph_editor.SIGNCOLOR[-1]:
+            return -1
+
+        return 0
+        
+
+
+# DEF:  WIDGET CLASSES
 class Help(QMainWindow):
     """
     Defines the Help class, a window in the application providing a user interface for
@@ -1439,6 +1729,7 @@ class Help(QMainWindow):
         with open('BooNGui/Help.html', 'r') as f: #opens local html file
             html = f.read()
             self.web.setHtml(html)
+
 
 
 class View(QDialog):
@@ -1573,6 +1864,7 @@ class View(QDialog):
         self.initialize_view()  #Refresh the view with converted formulas
 
 
+
 class StableStates(QDialog):
     """
     A dialog for displaying and managing stable states in a computational model.
@@ -1655,6 +1947,7 @@ class StableStates(QDialog):
                 column.append(item)
             self.datamodel.appendColumn(column)
         self.StableStatesPanel.setModel(self.datamodel)
+
 
 
 class Model(QMainWindow):
@@ -1747,6 +2040,7 @@ class Model(QMainWindow):
         layout = self.layout(model)
         self.parent.boon.draw_model(model, pos=layout, ax=self.canvas.axes)
         self.canvas.draw_idle()
+
 
 
 class Controllability(QMainWindow):
@@ -1990,6 +2284,7 @@ class Controllability(QMainWindow):
             self.close()
 
 
+
 class Threader(QObject):
     """
     Threader class for managing application execution within a separate thread.
@@ -2004,7 +2299,6 @@ class Threader(QObject):
         :type thread: QThread
     """
     finished = pyqtSignal()
-
     def __init__(self, app=lambda: None):
         """
         Represents a custom asynchronous functionality encapsulated in a QThread.
@@ -2053,10 +2347,11 @@ class Threader(QObject):
         self.thread.quit()
 
 
+
 #DEF:  MAIN
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     boonify = Boonify()
-    callback = boonify.canvas.mpl_connect('draw_event', lambda _: boonify.design())
+    callback = boonify.canvas.mpl_connect('draw_event', lambda _: boonify.graph_editor.design())
     boonify.show()
     sys.exit(app.exec_())
