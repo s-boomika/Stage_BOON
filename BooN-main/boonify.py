@@ -245,7 +245,7 @@ class Boonify(QMainWindow):
             self.filename = filename[0]
             self.boon = BooN.load(filename[0])
             self.refresh()
-            self.setup_design()
+            self.graph_editor.setup_design(self.boon)
             self.history_raz()  #clear history
 
     def save(self):
@@ -304,7 +304,7 @@ class Boonify(QMainWindow):
                 case _:
                     QMessageBox.critical(self, "File extension error", f"The extension is unknown. \nFound {extension}\nAdmitted extension: .txt, .bnet, .sbml, .xml")
             self.refresh()
-            self.setup_design()
+            self.graph_editor.setup_design(self.boon)
             self.history_raz()  #clear history
 
     def exportation(self):
@@ -407,7 +407,7 @@ class Boonify(QMainWindow):
             self.boon = self.history[hindex]  #restore the previous BooN
             self.hindex = hindex  #update the history index
             self.refresh()
-            self.setup_design()
+            self.graph_editor.setup_design(self.boon)
 
     def redo(self):
         """
@@ -421,7 +421,7 @@ class Boonify(QMainWindow):
             self.boon = self.history[hindex].copy()  #copy the current Boon
             self.hindex = hindex
             self.refresh()
-            self.setup_design()
+            self.graph_editor.setup_design(self.boon)
 
     def add_history(self):
         """
@@ -564,6 +564,7 @@ class Graph(QObject):
         self.node_positions = {}
         self.node_labels = {}
         self.edge_colors = {}
+        self.default_edge_sign = 1   # + edge = green by default
         self.selected_nodes = set()
         self.selected_edge = None
         self.zoom_factor = 1.0
@@ -828,10 +829,8 @@ class Graph(QObject):
             return
 
         for edge, color in self.edge_family_colors.items():
-
             if edge not in self.graph.edges():
                 continue
-
             if tuple(color) == BASIC_FAMILY_COLOR:
                 continue
 
@@ -839,7 +838,6 @@ class Graph(QObject):
             # SELF LOOP
             if u == v:
                 x0, y0 = self.node_positions[u]
-
                 radius = 0.08
                 theta = np.linspace(0, 2 * np.pi, 200)
 
@@ -883,9 +881,8 @@ class Graph(QObject):
 
                 px = -dy / norm
                 py = dx / norm
-            
                 offset = 0.02
-            
+
                 # IMPORTANT: determine which directed edge we are drawing
                 if (u, v) in self.edge_colors:   # or edge_family_colors
                     # THIS is u -> v (top edge in your drawing logic)
@@ -893,14 +890,14 @@ class Graph(QObject):
                 else:
                     # THIS is v -> u (bottom edge)
                     shift = -1
-            
+
                 sx = px * offset * shift
                 sy = py * offset * shift
-            
+
                 # midpoint of the SHIFTED edge (critical fix)
                 mx = ((x1 + sx) + (x2 + sx)) / 2
                 my = ((y1 + sy) + (y2 + sy)) / 2
-            
+
                 ox = 0
                 oy = 0
 
@@ -1449,6 +1446,11 @@ class Graph(QObject):
             ("Indigo", "#0D60DD"),
             ("Orange", "#FF8400"),
             ("Violet", "#6B0E97"),
+            ("Neon Pink", "#FF00F2"),
+            ("Neon Green", "#4DFF00"),
+            ("Cyan", "#00FFEA"),
+            ("Neon Yellow", "#E5FF00"),
+            ("White/None", "#FFFFFF")
             ]
         self.visible_colors = 5
         self.color_menu = QMenu(parent)
@@ -1519,67 +1521,6 @@ class Graph(QObject):
         # Redraw to show the family circle
         self.redraw_graph()
         self.graph_changed.emit()  # Update the model
-
-    def design(self):
-        """
-        Designs the BooN based on the events captured from the EditableGraph.
-        This function establishes consistency in the nodes and edges of the graph, processes symbolic
-        representation, determines signs and modularity of edges, and converts the interaction
-        graph (IG) to a BooN object for further utilization.
-        """
-        try:
-            #DEF: Definition of the interaction graph of the network from the drawing.
-            idvar = {idt: symbols(text.get_text()) for idt, text in boonify.graph_editor.node_labels.items() if isinstance(idt, (int, Symbol))}
-
-            def symbolic(edge):
-                """set edges in symbolic form where node labels are symbols"""
-                return idvar[edge[0]], idvar[edge[1]]
-
-            edges = {(src, tgt) for src, tgt in self.edge_colors.keys() if src in idvar and tgt in idvar}
-
-            edit_pos = self.node_positions
-            pos = {idvar[idt]: edit_pos[idt] for idt in idvar}
-
-            edge_attributes = self.edge_colors
-            signs = {}
-            for edge in edges:
-                #fallback if no stored sign
-                signs[edge] = self.boon.interaction_graph.get_edge_data(*edge, {}).get("sign", 0)
-
-            modules = {}
-
-            for edge in edges:
-                sign = signs[edge]
-                modules[symbolic(edge)] = {sign}
-
-            #Convert edges symbolically for signs
-            signs = {symbolic(edge): signs[edge] for edge in signs}
-
-            #Define the ig from the editable graph
-            ig = nx.DiGraph()
-            ig.add_nodes_from(idvar.values())
-            for edge in signs:
-                ig.add_edge(edge[0], edge[1],
-                            sign=signs[edge],
-                            module=modules[edge],
-                            color=edge_attributes[edge].get_facecolor()[0:3])
-
-            #Convert the ig to BooN
-            try:
-                self.boon = BooN.from_ig(ig)
-            except ValueError:
-                pass
-
-            #Store positions
-            self.boon.pos = pos
-
-        except Exception as e:
-            #Catch any errors during design update
-            print(f"Design error (continuing): {e}")
-            import traceback
-            traceback.print_exc()
-
-
 
 class Network:
     """
@@ -2370,6 +2311,6 @@ class Threader(QObject):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     boonify = Boonify()
-    callback = boonify.canvas.mpl_connect('draw_event', lambda _: boonify.graph_editor.design())
+    #callback = boonify.canvas.mpl_connect('draw_event', lambda _: boonify.graph_editor.design())
     boonify.show()
     sys.exit(app.exec_())
