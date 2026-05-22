@@ -28,8 +28,8 @@
      inkscape:cy="862.58306"
      inkscape:window-width="1572"
      inkscape:window-height="1020"
-     inkscape:window-x="2520"
-     inkscape:window-y="132"
+     inkscape:window-x="330"
+     inkscape:window-y="0"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1" />
   <defs
@@ -52,21 +52,10 @@
        cx="105.13272"
        cy="153.95081"
        r="96.722816" />
-    <rect
-       style="fill:#000000;stroke-width:1.18587"
-       id="rect2"
-       width="171.10292"
-       height="18.649164"
-       x="15.126635"
-       y="143.91359" />
     <path
        style="fill:#000000;stroke-width:0.578059"
        d="m 180.80867,154.37193 c 2.25248,-7.52756 0,0 0,0 z"
        id="path14" />
-    <path
-       style="fill:#000000;stroke-width:0.673379"
-       d="m 196.79193,152.00229 -23.13908,30.35259 0.81909,-60.12144 z"
-       id="path15" />
     <rect
        style="fill:#ff5555;stroke-width:1.26843"
        id="rect15-8"

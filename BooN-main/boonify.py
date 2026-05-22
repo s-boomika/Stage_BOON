@@ -1,10 +1,10 @@
-#Graphical interface for BooN design and analysis
-#Author: Franck Delaplace
-#Creation date: February 2024
-#Co-author: Boomika SELVARADJOU
-#Modification date: April 2026
+# Graphical interface for BooN design and analysis
+# Author: Franck Delaplace
+# Creation date: February 2024
+# Co-author: Boomika SELVARADJOU
+# Modification date: April 2026
 
-# In comments:
+#In comments:
 #DEF means definition which is a code part gathering functions related to a process or an object definition,
 #STEP means main steps
 #WARNING is a warning.
@@ -66,8 +66,8 @@ LPSOLVER = PULP_CBC_CMD  #LP-Solver related to the controllability resolution. (
 
 #Integer regular expression
 INTPAT: str = r"\s*-?[0-9]+\s*"
-
-
+# basic family color (white)
+BASIC_FAMILY_COLOR : tuple[int, int, int ] = (1 ,1 ,1 ) #white
 
 class Boonify(QMainWindow):
     """
@@ -819,71 +819,100 @@ class Graph(QObject):
 
             self.axes.add_patch(loop)
 
-    def _draw_family_circle(self, edge, rgb):
+    def _draw_family_circles(self):
+        """
+        Draw family color circles on edges.
+        BASIC_FAMILY_COLOR (white) = not drawn.
+        """
         if not self.edge_family_colors:
             return
 
         for edge, color in self.edge_family_colors.items():
+
             if edge not in self.graph.edges():
                 continue
 
-            u, v = edge
+            if tuple(color) == BASIC_FAMILY_COLOR:
+                continue
 
-            # SELF-LOOP HANDLING FIX
+            u, v = edge
+            # SELF LOOP
             if u == v:
                 x0, y0 = self.node_positions[u]
 
-                radius = 0.08  # MUST match self-loop drawing
+                radius = 0.08
                 theta = np.linspace(0, 2 * np.pi, 200)
 
-                # full loop points (same geometry idea as arc3 rad)
                 xs = x0 + radius * np.cos(theta)
                 ys = y0 + radius * np.sin(theta)
+                mid_idx = len(theta) // 4
+                cx = xs[mid_idx]
+                cy = ys[mid_idx] - 0.15
 
-                # take midpoint of loop (top of loop visually)
-                mid_idx = len(theta) // 4   # top-ish point (more visually centered than exact half)
-                cx, cy = xs[mid_idx], ys[mid_idx]
-
-                cy -= 0.15
-
-                circle = plt.Circle(
-                    (cx, cy),
-                    0.015,
-                    color=color,
-                    zorder=20
+                self.axes.add_patch(
+                    plt.Circle(
+                        (cx, cy),
+                        0.015,
+                        color=color,
+                        zorder=20
+                    )
                 )
-                self.axes.add_patch(circle)
                 continue
 
-            # NORMAL EDGE CASE
+            # NORMAL / BIDIRECTIONAL EDGE
             x1, y1 = self.node_positions[u]
             x2, y2 = self.node_positions[v]
 
             dx = x2 - x1
             dy = y2 - y1
-            norm = math.hypot(dx, dy) or 1
 
-            #midpoint
+            norm = math.hypot(dx, dy)
+            if norm == 0:
+                continue
+
+            # midpoint
             mx = (x1 + x2) / 2
             my = (y1 + y2) / 2
 
-            #default no offset
+            # default = centered circle
             ox = 0
             oy = 0
 
-            #if bidirectional
+            # DOUBLE ASSOCIATION ONLY
             if self.graph.has_edge(v, u):
+
                 px = -dy / norm
                 py = dx / norm
+            
                 offset = 0.02
+            
+                # IMPORTANT: determine which directed edge we are drawing
+                if (u, v) in self.edge_colors:   # or edge_family_colors
+                    # THIS is u -> v (top edge in your drawing logic)
+                    shift = 1
+                else:
+                    # THIS is v -> u (bottom edge)
+                    shift = -1
+            
+                sx = px * offset * shift
+                sy = py * offset * shift
+            
+                # midpoint of the SHIFTED edge (critical fix)
+                mx = ((x1 + sx) + (x2 + sx)) / 2
+                my = ((y1 + sy) + (y2 + sy)) / 2
+            
+                ox = 0
+                oy = 0
 
-                direction = 1 if str(u) < str(v) else -1
-
-                ox = px * offset * direction
-                oy = py * offset * direction
-
-            circle = plt.Circle((mx + ox, my + oy), 0.01, color=color, zorder=20)
-            self.axes.add_patch(circle)
+            # draw family circle
+            self.axes.add_patch(
+                plt.Circle(
+                    (mx + ox, my + oy),
+                    0.012,
+                    color=color,
+                    zorder=20
+                )
+            )
     
     def _apply_zoom(self):
         """
@@ -898,17 +927,6 @@ class Graph(QObject):
         height = base_height / self.zoom_factor
         ax.set_xlim(center_x - width / 2, center_x + width / 2)
         ax.set_ylim(center_y - height / 2, center_y + height / 2)
-
-    def _draw_family_circles(self):
-        for edge, color in self.edge_family_colors.items():
-            WHITE = (1.0, 1.0, 1.0)
-            if tuple(color) == WHITE:
-                continue  # don't draw white family
-
-            if edge not in self.graph.edges():
-                continue
-
-            self._draw_family_circle(edge, color)
 
     def _draw_edge_preview(self, x1, y1, x2, y2):
         # ALWAYS clear first
@@ -1243,63 +1261,63 @@ class Graph(QObject):
             :param threshold: Maximum distance to consider as a click on an edge
             :return: The nearest edge as (src, tgt) tuple, or None if no edge is within threshold
         """
-        nearest_edge = None
-        min_dist = float('inf')
+        candidates = []
 
         for src, tgt in self.graph.edges():
-            # SELF-LOOP HANDLING FIX
+
+            # SELF LOOP HANDLING
             if src == tgt:
                 x0, y0 = self.node_positions[src]
-
-                # approximate same loop shape as FancyArrowPatch(rad=2.8)
                 radius = 0.08
 
-                # sample arc points (top loop)
-                for t in np.linspace(0, 2 * np.pi, 20):
+                for t in np.linspace(0, 2 * np.pi, 30):
                     cx = x0 + radius * math.cos(t)
                     cy = y0 + radius * math.sin(t)
 
                     dist = math.hypot(x - cx, y - cy)
 
-                    if dist < threshold and dist < min_dist:
-                        nearest_edge = (src, tgt)
-                        min_dist = dist
-
+                    if dist < threshold:
+                        candidates.append((dist, (src, tgt)))
                 continue
 
             # NORMAL EDGE HANDLING
             x1, y1 = self.node_positions[src]
             x2, y2 = self.node_positions[tgt]
 
-            # bidirectional offset handling
-            if self.graph.has_edge(tgt, src):
-                dx = x2 - x1
-                dy = y2 - y1
-                length = math.hypot(dx, dy)
+            dx = x2 - x1
+            dy = y2 - y1
+            length = math.hypot(dx, dy)
 
-                if length > 0:
-                    px = -dy / length
-                    py = dx / length
-                    offset = 0.02
-                    direction = 1 if str(src) < str(tgt) else -1
-                    ox = px * offset * direction
-                    oy = py * offset * direction
-                    x1 += ox
-                    y1 += oy
-                    x2 += ox
-                    y2 += oy
+            if length == 0:
+                continue
 
-            dist = self._point_to_segment_distance(
-                x, y,
-                x1, y1,
-                x2, y2
-            )
+            # perpendicular unit vector
+            px = -dy / length
+            py = dx / length
 
-            if dist < threshold and dist < min_dist:
-                nearest_edge = (src, tgt)
-                min_dist = dist
+            offset = 0.02
 
-        return nearest_edge
+            # IMPORTANT FIX:
+            # direction is ONLY based on edge direction (not tuple ordering)
+            direction = 1 if (src, tgt) in self.graph.edges() else 1
+
+            ox = px * offset * direction
+            oy = py * offset * direction
+
+            # apply offset ONLY to THIS directed edge
+            x1o, y1o = x1 + ox, y1 + oy
+            x2o, y2o = x2 + ox, y2 + oy
+
+            dist = self._point_to_segment_distance(x, y, x1o, y1o, x2o, y2o)
+
+            if dist < threshold:
+                candidates.append((dist, (src, tgt)))
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda x: x[0])
+        return candidates[0][1]
     
     def _get_event_xy(self, event):
         """Return the data coordinates for a mouse event."""
@@ -1416,21 +1434,21 @@ class Graph(QObject):
 
     def setup_color_menu(self, parent):
         self.color_palette = [
-            ("Red", "#E57373"),
-            ("Green", "#81C784"),
-            ("Blue", "#64B5F6"),
-            ("Yellow", "#FFD54F"),
-            ("Purple", "#BA68C8"),
-            ("Pink", "#F44A82"),
-            ("Teal", "#2CD4C3"),
-            ("Indigo", "#546FF7"),
-            ("Orange", "#FFA318"),
-            ("Violet", "#7300FF"),
-            ("Magenta", "#FF00FF"),
-            ("Lime", "#00FF00"),
-            ("Cyan", "#00FFFF"),
-            ("Fluo Yellow", "#E1FF00"),
-            ("Orange", "#FF4800"),
+            ("Pastel pink", "#FFC0E7"),
+            ("Pastel green", "#CAFDCB"),
+            ("Pastel blue", "#CDE9FF"),
+            ("Pastel yellow", "#FAF9A3"),
+            ("Purple", "#ECCFFF"),
+            ("Magenta", "#FF528C"),
+            ("Apple Green", "#72D31C"),
+            ("Teal", "#02B5C1"),
+            ("Golden", "#F0CE37"),
+            ("Purple", "#B66DFF"),
+            ("Red", "#C6002E"),
+            ("Forest green", "#095A22"),
+            ("Indigo", "#0D60DD"),
+            ("Orange", "#FF8400"),
+            ("Violet", "#6B0E97"),
             ]
         self.visible_colors = 5
         self.color_menu = QMenu(parent)
