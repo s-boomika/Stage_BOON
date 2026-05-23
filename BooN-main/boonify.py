@@ -700,6 +700,50 @@ class Graph(QObject):
         self.graph_changed.emit()
         print(f"Edge created: {source} -> {target}")
 
+    def _compute_self_loop_angle(self, node):
+        """
+        Compute best angle for self-loop placement.
+        Returns angle in radians.
+        """
+
+        neighbors = set(self.graph.predecessors(node)) | set(self.graph.successors(node))
+        neighbors.discard(node)  # remove self-loop itself
+
+        x0, y0 = self.node_positions[node]
+
+        # No neighbors -> default upward loop
+        if not neighbors:
+            return np.pi / 2
+
+        occupied_angles = []
+
+        for nbr in neighbors:
+            x1, y1 = self.node_positions[nbr]
+
+            dx = x1 - x0
+            dy = y1 - y0
+
+            angle = math.atan2(dy, dx)
+            occupied_angles.append(angle)
+
+        occupied_angles.sort()
+
+        # duplicate first angle + 2π for circular gap computation
+        extended = occupied_angles + [occupied_angles[0] + 2 * np.pi]
+
+        largest_gap = -1
+        best_angle = 0
+
+        for a1, a2 in zip(occupied_angles, extended[1:]):
+
+            gap = a2 - a1
+
+            if gap > largest_gap:
+                largest_gap = gap
+                best_angle = a1 + gap / 2
+
+        return best_angle
+
     """
     View
     """
@@ -797,7 +841,8 @@ class Graph(QObject):
             #connectionstyle='arc3,rad=0.0',
             ax=self.canvas.axes,
         )
-        
+    
+    """    
     def _draw_self_loops(self):
         from matplotlib.patches import FancyArrowPatch
 
@@ -806,19 +851,115 @@ class Graph(QObject):
                 continue
 
             x, y = self.node_positions[u]
-            offset = 0.03  # adjust
+            angle = self._compute_self_loop_angle(u)
+            radius = 0.01  # adjust
+            # loop center offset in free-space direction
+            cx = x + math.cos(angle) * radius
+            cy = y + math.sin(angle) * radius
+
+            # perpendicular direction
+            perp_angle1 = angle + np.pi / 2
+            perp_angle2 = angle - np.pi / 2
+
+            start = (cx + math.cos(perp_angle1) * 0.03,
+                     cy + math.sin(perp_angle1) * 0.03,)
+            end = (cx + math.cos(perp_angle2) * 0.03,
+                   cy + math.sin(perp_angle2) * 0.03,)
+
             loop = FancyArrowPatch(
-                (x - offset, y),   # start
-                (x + offset, y),  # tiny offset so it doesn't collapse
-                connectionstyle="arc3, rad=2.8",  # controls loop shape
-                arrowstyle="-|>",   # 👈 THIS adds arrow head
-                mutation_scale=15,   # arrow head size
+                start,
+                end,
+                connectionstyle="arc3,rad=-2.5",
+                arrowstyle="-|>",
+                mutation_scale=15,
                 linewidth=3,
                 color=self.edge_colors.get((u, v), "black"),
-                zorder=10
+                zorder=10,
             )
 
             self.axes.add_patch(loop)
+            """
+    
+    import numpy as np
+    import math
+
+    def _draw_self_loops(self):
+        from matplotlib.patches import PathPatch, FancyArrowPatch
+        from matplotlib.path import Path
+
+        for u, v in self.graph.edges():
+            if u != v:
+                continue
+
+            x, y = self.node_positions[u]
+
+            # --- 1. choose loop orientation
+            angle = self._compute_self_loop_angle(u)
+
+            radius = 0.07
+            cx = x + radius * math.cos(angle)
+            cy = y + radius * math.sin(angle)
+
+            # --- 2. circular arc
+            R = 0.05
+
+            theta1 = 0.14 * np.pi
+            theta2 = 1.9 * np.pi
+
+            thetas = np.linspace(theta1, theta2, 60)
+
+            xs = cx + R * np.cos(thetas)
+            ys = cy + R * np.sin(thetas)
+
+            rot = angle + np.pi
+
+            xr = (xs - cx) * np.cos(rot) - (ys - cy) * np.sin(rot) + cx
+            yr = (xs - cx) * np.sin(rot) + (ys - cy) * np.cos(rot) + cy
+
+            # --- 3. path
+            verts = np.column_stack([xr, yr])
+
+            # shorten curve slightly so arrowhead sits exactly at end
+            arrow_backoff = 4
+
+            curve_verts = verts[:-arrow_backoff]
+
+            codes = [Path.MOVETO] + [Path.LINETO] * (len(curve_verts) - 1)
+
+            path = Path(curve_verts, codes)
+
+            patch = PathPatch(
+                path,
+                facecolor="none",
+                edgecolor=self.edge_colors.get((u, u), "black"),
+                linewidth=3,
+                capstyle='round',
+                joinstyle='round',
+                zorder=10
+            )
+
+            self.axes.add_patch(patch)
+
+            # --- 4. arrow attached to end of loop
+
+            # use last segment direction
+            p0 = verts[-arrow_backoff - 1]
+            p1 = verts[-1]
+
+            arrow = FancyArrowPatch(
+                p0,
+                p1,
+                arrowstyle='-|>',
+                mutation_scale=20,
+                color=self.edge_colors.get((u, u), "black"),
+                linewidth=3,
+                shrinkA=0,
+                shrinkB=0,
+                connectionstyle="arc3",
+                zorder=11
+            )
+
+            self.axes.add_patch(arrow)
 
     def _draw_family_circles(self):
         """
@@ -837,24 +978,68 @@ class Graph(QObject):
             u, v = edge
             # SELF LOOP
             if u == v:
-                x0, y0 = self.node_positions[u]
-                radius = 0.08
-                theta = np.linspace(0, 2 * np.pi, 200)
+            
+                x, y = self.node_positions[u]
 
-                xs = x0 + radius * np.cos(theta)
-                ys = y0 + radius * np.sin(theta)
-                mid_idx = len(theta) // 4
-                cx = xs[mid_idx]
-                cy = ys[mid_idx] - 0.15
+                # same geometry as _draw_self_loops
+                angle = self._compute_self_loop_angle(u)
+
+                radius = 0.09
+                cx = x + radius * math.cos(angle)
+                cy = y + radius * math.sin(angle)
+
+                R = 0.07
+
+                theta1 = 0.15 * np.pi
+                theta2 = 1.85 * np.pi
+
+                thetas = np.linspace(theta1, theta2, 200)
+
+                xs = cx + R * np.cos(thetas)
+                ys = cy + R * np.sin(thetas)
+
+                rot = angle + np.pi
+
+                xr = ((xs - cx) * np.cos(rot) - (ys - cy) * np.sin(rot) + cx)
+
+                yr = ((xs - cx) * np.sin(rot) + (ys - cy) * np.cos(rot) + cy )
+
+                # place family marker halfway along loop
+                mid_idx = len(xr) // 2
+
+                mx = xr[mid_idx]
+                my = yr[mid_idx]
+
+                # tangent around midpoint
+                tx = xr[mid_idx + 1] - xr[mid_idx - 1]
+                ty = yr[mid_idx + 1] - yr[mid_idx - 1]
+
+                # normalize
+                norm = math.hypot(tx, ty)
+
+                if norm != 0:
+                    tx /= norm
+                    ty /= norm
+
+                # perpendicular (normal) vector
+                nx = -ty
+                ny = tx
+
+                # move circle slightly inward toward loop center
+                gap = 0.04
+
+                mx += nx * gap
+                my += ny * gap
 
                 self.axes.add_patch(
                     plt.Circle(
-                        (cx, cy),
-                        0.015,
+                        (mx, my),
+                        0.012,
                         color=color,
                         zorder=20
                     )
                 )
+
                 continue
 
             # NORMAL / BIDIRECTIONAL EDGE
