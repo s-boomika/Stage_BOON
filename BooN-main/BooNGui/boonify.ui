@@ -266,7 +266,7 @@
   </widget>
   <widget class="QToolBar" name="toolBar_2">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -300,6 +300,7 @@
    </attribute>
    <addaction name="actionDelete"/>
    <addaction name="actionFamilyColor"/>
+   <addaction name="actionHideFamilyColor"/>
    <addaction name="actionRenameNode"/>
    <addaction name="separator"/>
    <addaction name="actionEdgePlus"/>
@@ -543,6 +544,18 @@
    </property>
    <property name="toolTip">
     <string>Rename Node</string>
+   </property>
+  </action>
+  <action name="actionHideFamilyColor">
+   <property name="icon">
+    <iconset>
+     <normaloff>../logos/no_family_color_sign.svg</normaloff>../logos/no_family_color_sign.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Hide Family Color</string>
+   </property>
+   <property name="toolTip">
+    <string>Hide Family Color View</string>
    </property>
   </action>
  </widget>

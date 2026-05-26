@@ -21,6 +21,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import networkx as nx
+
 #from netgraph import EditableGraph #not use editgraph
 from sympy import SOPform, symbols
 from sympy.core.symbol import Symbol
@@ -42,6 +43,7 @@ from PyQt5.uic import loadUi
 from turtle import color, pos
 from matplotlib import colors
 from matplotlib.pylab import norm
+from matplotlib.patches import Rectangle
 from tabulate import tabulate
 
 #Local 
@@ -176,7 +178,7 @@ class Boonify(QMainWindow):
         # STEP: Create graph editor ON THE REAL CANVAS
         self.graph_editor = Graph(self.canvas)
 
-        self.graph_editor.graph_changed.connect( self.on_graph_changed )
+        self.graph_editor.graph_changed.connect(self.on_graph_changed)
 
         # STEP: Insert canvas into GUI
         self.DesignCanvas.addWidget(self.canvas)
@@ -211,6 +213,7 @@ class Boonify(QMainWindow):
 
         # Connect action directly to opening palette
         self.actionFamilyColor.triggered.connect(self.graph_editor.open_color_palette)
+        self.actionHideFamilyColor.triggered.connect(self.graph_editor.toggle_family_colors)
         # setup palette (no QAction binding here anymore)
         self.graph_editor.setup_color_menu(self)
 
@@ -404,10 +407,11 @@ class Boonify(QMainWindow):
         hindex = (self.hindex - 1) % HSIZE
         if self.history[hindex]:
             self.disablecallback = True  #Prevent disruptive updates by disabling callback.
-            self.boon = self.history[hindex]  #restore the previous BooN
+            self.boon = self.history[hindex].copy()  #restore the previous BooN
             self.hindex = hindex  #update the history index
             self.refresh()
             self.graph_editor.setup_design(self.boon)
+            self.graph_editor.refresh_next_node_id()
 
     def redo(self):
         """
@@ -422,6 +426,7 @@ class Boonify(QMainWindow):
             self.hindex = hindex
             self.refresh()
             self.graph_editor.setup_design(self.boon)
+            self.graph_editor.refresh_next_node_id()
 
     def add_history(self):
         """
@@ -563,12 +568,14 @@ class Graph(QObject):
         self.graph = nx.DiGraph()
         self.node_positions = {}
         self.node_labels = {}
+        self.next_node_id = 1
         self.edge_colors = {}
         self.default_edge_sign = 1   # + edge = green by default
         self.selected_nodes = set()
         self.selected_edge = None
         self.zoom_factor = 1.0
         self.edge_family_colors = {}
+        self.show_family_colors = True
 
         self.double_click_node = None
         self.edge_preview = None
@@ -576,6 +583,7 @@ class Graph(QObject):
         self.tracked_positions = {}
         self.drag_start_pos = None
         self.selection_rect_start = None
+        self.selection_rect_patch = None
         self.dragging_nodes = False
         self.is_dragging = False
 
@@ -613,6 +621,15 @@ class Graph(QObject):
 
         self.redraw_graph()
 
+        existing_ids = [
+            n for n in self.graph.nodes()
+            if isinstance(n, int)
+            ]
+        if existing_ids:
+            self.next_node_id = max(existing_ids) + 1
+        else:
+            self.next_node_id = 1
+
     def _track_node_positions(self, dx, dy):
         """
         Track position changes without redrawing (used during drag).
@@ -644,8 +661,10 @@ class Graph(QObject):
     def _apply_edge_color(self, rgb):
         if not self.selected_edge:
             return
-        #Update visual color
-        self.edge_colors[self.selected_edge] = rgb
+        u, v = self.selected_edge
+        #if bidirectional, apply to both directions
+        self.edge_colors[(u,v)] = rgb #Update visual color
+        self.edge_colors[(v,u)] = rgb
         self.redraw_graph()
 
     def change_edge_sign(self, sign):
@@ -661,18 +680,62 @@ class Graph(QObject):
         print(f"Default edge sign set to {sign}")
 
     def _add_new_node(self, x, y):
-        #Add a new node at the specified position.
-        #    :param x: X coordinate
-        #    :param y: Y coordinate
-        #Find next integer id for the new node
-        nodes = list(self.graph.nodes)
-        int_nodes = [n for n in nodes if isinstance(n, int)]
-        new_id = max(int_nodes) + 1 if int_nodes else 1
-        self.graph.add_node(new_id)
-        self.node_positions[new_id]=(x,y)
-        self.node_labels[new_id]= f"x{new_id}"
+        """
+        Add a new node at the specified position.
+            :param x: X coordinate
+            :param y: Y coordinate
+        Find next integer id for the new node
+        """
+        #nodes = list(self.graph.nodes)
+        #int_nodes = [n for n in nodes if isinstance(n, int)]
+        #new_id = max(int_nodes) + 1 if int_nodes else 1
+
+        #Internal graph ID
+        new_id = self.next_node_id
+        self.next_node_id += 1
+
+        new_label = self.next_default_label()           #Visible label
+
+        self.graph.add_node(new_id)                     #Creaste node
+        self.node_positions[new_id]=(x,y)               #Store positions
+        self.node_labels[new_id]= new_label             #Store displayed label
+
+        #Redraw
         self.redraw_graph()
         self.graph_changed.emit()
+
+    def refresh_next_node_id(self):
+        """
+        Recompute next internal node ID safely.
+        """
+
+        int_nodes = [n for n in self.graph.nodes if isinstance(n, int)]
+
+        if int_nodes:
+            self.next_node_id = max(int_nodes) + 1
+        else:
+            self.next_node_id = 1
+    
+    def next_default_label(self):
+        """
+        Return next available default node label.
+        Only labels matching x<number> are considered.
+        Renamed nodes are ignored.
+        Example:
+            x1, x2 -> x3
+            tom, x2, x3 -> x4
+        """
+        max_index = 0
+        for label in self.node_labels.values():
+            if not isinstance(label, str):
+                continue
+            
+            match = re.fullmatch(r"x(\d+)", label.strip())
+            if match:
+                number = int(match.group(1))
+                if number > max_index:
+                    max_index = number
+        return f"x{max_index + 1}"
 
     def _create_edge(self, source, target):
         """
@@ -814,6 +877,7 @@ class Graph(QObject):
         pos1 = dict(self.node_positions)
         pos1[u] = (x1 + px * offset, y1 + py * offset)
         pos1[v] = (x2 + px * offset, y2 + py * offset)
+        
         nx.draw_networkx_edges(
             self.graph,
             pos1,
@@ -841,44 +905,6 @@ class Graph(QObject):
             #connectionstyle='arc3,rad=0.0',
             ax=self.canvas.axes,
         )
-    
-    """    
-    def _draw_self_loops(self):
-        from matplotlib.patches import FancyArrowPatch
-
-        for u, v in self.graph.edges():
-            if u != v:
-                continue
-
-            x, y = self.node_positions[u]
-            angle = self._compute_self_loop_angle(u)
-            radius = 0.01  # adjust
-            # loop center offset in free-space direction
-            cx = x + math.cos(angle) * radius
-            cy = y + math.sin(angle) * radius
-
-            # perpendicular direction
-            perp_angle1 = angle + np.pi / 2
-            perp_angle2 = angle - np.pi / 2
-
-            start = (cx + math.cos(perp_angle1) * 0.03,
-                     cy + math.sin(perp_angle1) * 0.03,)
-            end = (cx + math.cos(perp_angle2) * 0.03,
-                   cy + math.sin(perp_angle2) * 0.03,)
-
-            loop = FancyArrowPatch(
-                start,
-                end,
-                connectionstyle="arc3,rad=-2.5",
-                arrowstyle="-|>",
-                mutation_scale=15,
-                linewidth=3,
-                color=self.edge_colors.get((u, v), "black"),
-                zorder=10,
-            )
-
-            self.axes.add_patch(loop)
-            """
     
     import numpy as np
     import math
@@ -966,6 +992,9 @@ class Graph(QObject):
         Draw family color circles on edges.
         BASIC_FAMILY_COLOR (white) = not drawn.
         """
+        if not self.show_family_colors:
+            return
+        
         if not self.edge_family_colors:
             return
 
@@ -1071,10 +1100,10 @@ class Graph(QObject):
                 # IMPORTANT: determine which directed edge we are drawing
                 if (u, v) in self.edge_colors:   # or edge_family_colors
                     # THIS is u -> v (top edge in your drawing logic)
-                    shift = 1
+                    shift = -1
                 else:
                     # THIS is v -> u (bottom edge)
-                    shift = -1
+                    shift = 1
 
                 sx = px * offset * shift
                 sy = py * offset * shift
@@ -1142,6 +1171,16 @@ class Graph(QObject):
             self.edge_preview = None
             self.canvas.draw_idle()
 
+    def toggle_family_colors(self):
+        """
+        Show/hide family color circles.
+        """
+        self.show_family_colors = not self.show_family_colors
+
+        print(f"Family colors visible: {self.show_family_colors}")
+
+        self.redraw_graph()
+
     def redraw_graph(self):
         # store preview endpoints before clearing
         preview = self.edge_preview
@@ -1154,6 +1193,7 @@ class Graph(QObject):
             except Exception:
                 preview_data = None
         self.axes.clear()
+        self.selection_rect_patch=None
         self._draw_nodes()
         self._draw_labels()
         self._draw_edges()
@@ -1216,7 +1256,7 @@ class Graph(QObject):
                 return
             # Right-click on edge: select edge
             if nearest_edge is not None:
-                self.selected_edge = nearest_edge
+                self.selected_edge = self._canonical_edge(*nearest_edge)
                 self.selected_nodes.clear()
                 print(f"Selected edge: {nearest_edge}")
                 return
@@ -1263,6 +1303,7 @@ class Graph(QObject):
                 dx = xdata - self.selection_rect_start[0]
                 dy = ydata - self.selection_rect_start[1]
                 distance = math.sqrt(dx**2 + dy**2)
+
                 # If click was on empty space with minimal movement, create a new node
                 if distance < 0.03 and not self.selected_nodes:
                     self._add_new_node(self.selection_rect_start[0], self.selection_rect_start[1])
@@ -1272,6 +1313,13 @@ class Graph(QObject):
                         self.selection_rect_start[0], self.selection_rect_start[1],
                         xdata, ydata
                     )
+
+            # Remove selection rectangle visualization
+            if self.selection_rect_patch is not None:
+                self.selection_rect_patch.remove()
+                self.selection_rect_patch = None
+                self.canvas.draw_idle()
+
             self.selection_rect_start = None
             self.drag_start_pos = None
             self.dragging_nodes = False
@@ -1291,8 +1339,34 @@ class Graph(QObject):
             self._draw_edge_preview(x1, y1, x2, y2)
             self.canvas.draw_idle()
             return  # important: prevents drag conflict
+        
+        # 2. SELECTION RECTANGLE PREVIEW
+        if self.selection_rect_start is not None and not self.dragging_nodes:
+        
+            x0, y0 = self.selection_rect_start
+            x1, y1 = event.xdata, event.ydata
+        
+            # remove old rectangle
+            if self.selection_rect_patch is not None:
+                self.selection_rect_patch.remove()
+        
+            # create dashed rectangle
+            self.selection_rect_patch = Rectangle(
+                (min(x0, x1), min(y0, y1)),
+                abs(x1 - x0),
+                abs(y1 - y0),
+                linewidth=1.5,
+                edgecolor='black',
+                facecolor='lightblue',
+                alpha=0.2,
+                linestyle='dashed',
+                zorder=999,
+            )
+        
+            self.axes.add_patch(self.selection_rect_patch)
+            self.canvas.draw_idle()
 
-        # 2. NODE DRAGGING
+        # 3. NODE DRAGGING
         if self.drag_start_pos and self.dragging_nodes and self.selected_nodes:
 
             dx = event.xdata - self.drag_start_pos[0]
@@ -1435,7 +1509,7 @@ class Graph(QObject):
                 min_dist = dist
         return nearest
     
-    def _get_nearest_edge(self, x, y, threshold=0.025):
+    def _get_nearest_edge(self, x, y, threshold=0.045):
         """
         Find the nearest edge to the given coordinates.
             :param x: X coordinate
@@ -1446,7 +1520,6 @@ class Graph(QObject):
         candidates = []
 
         for src, tgt in self.graph.edges():
-
             # SELF LOOP HANDLING
             if src == tgt:
                 x0, y0 = self.node_positions[src]
@@ -1481,7 +1554,10 @@ class Graph(QObject):
 
             # IMPORTANT FIX:
             # direction is ONLY based on edge direction (not tuple ordering)
-            direction = 1 if (src, tgt) in self.graph.edges() else 1
+            #direction = 1 if (src, tgt) in self.graph.edges() else 1
+            direction = 1
+            if self.graph.has_edge(tgt, src):
+                direction = -1
 
             ox = px * offset * direction
             oy = py * offset * direction
@@ -1500,6 +1576,12 @@ class Graph(QObject):
 
         candidates.sort(key=lambda x: x[0])
         return candidates[0][1]
+    
+    def _canonical_edge(self, u, v):
+        """Return stable ordering for bidirectional pair."""
+        if (u, v) in self.graph.edges() and (v, u) in self.graph.edges():
+            return tuple(sorted((u, v)))
+        return (u, v)
     
     def _get_event_xy(self, event):
         """Return the data coordinates for a mouse event."""
@@ -1534,25 +1616,25 @@ class Graph(QObject):
         """
         Opens a dialog to rename the currently selected node.
         """
-        if not self.selected_nodes: #if no node is selected for renaming, show error
-            QMessageBox.warning(self, "No Selection", "Please select a node to rename.")
+        if not self.selected_nodes:                                 #if no node is selected for renaming, show error
+            QMessageBox.warning(None, "No Selection", "Please select a node to rename.")
             return
-        if len(self.selected_nodes) > 1: #if multiple nodes is selected for renaming, show error
-            QMessageBox.warning(self, "Multiple Selection", "Please select only one node to rename.")
+        if len(self.selected_nodes) > 1:                            #if multiple nodes is selected for renaming, show error
+            QMessageBox.warning(None, "Multiple Selection", "Please select only one node to rename.")
             return
-        node = list(self.selected_nodes)[0] #get the selected node
-        old_name = self.node_labels.get(node, str(node)) #get current label from node_labels
+        node = list(self.selected_nodes)[0]                         #get the selected node
+        old_name = self.node_labels.get(node, str(node))            #get current label from node_labels
         #Show input dialog
         new_name, ok = QInputDialog.getText(
-            self,
+            None,
             "Rename Node",
             f"Enter new name for node '{old_name}':",
             text=old_name
         )
-        if ok and new_name and new_name != old_name: #check if new name is valid and different from old name
-            self.node_labels[node] = new_name  #update the node label
-            self.redraw_graph()  #redraw graph with new node name
-            self.graph_changed.emit()  #update graph with changes
+        if ok and new_name and new_name != old_name:                #check if new name is valid and different from old name
+            self.node_labels[node] = new_name                       #update the node label
+            self.redraw_graph()                                     #redraw graph with new node name
+            self.graph_changed.emit()                               #update graph with changes
     
     def _point_to_segment_distance(self, px, py, x1, y1, x2, y2):
         """
@@ -1607,9 +1689,9 @@ class Graph(QObject):
             self.edge_family_colors = {}
 
         edge = self.selected_edge
+        u, v = edge
 
-        self.edge_family_colors[edge] = rgb
-        #self._apply_edge_color(rgb)
+        self.edge_family_colors[(u, v)] = rgb
 
         self.redraw_graph()
         self.graph_changed.emit()
@@ -1647,7 +1729,7 @@ class Graph(QObject):
             return
 
         self.build_color_palette()
-        self.color_menu.popup(QCursor.pos())
+        self.color_menu.popup(QCursor().pos())
 
     def build_color_palette(self):
         self.color_menu.clear()
@@ -1686,12 +1768,12 @@ class Graph(QObject):
     def show_more_colors(self):
         self.visible_colors+=5
         self.build_color_palette()
-        self.color_menu.popup(QCursor().pos())
+        self.color_menu.popup(self.color_menu.pos())
 
     def show_less_colors(self):
         self.visible_colors = max(5, self.visible_colors - 5)
         self.build_color_palette()
-        self.color_menu.popup(QCursor.pos())
+        self.color_menu.popup(self.color_menu.pos())
 
     def set_family_color(self, color_value):
         if not self.selected_edge:
@@ -2470,6 +2552,7 @@ class Threader(QObject):
         application logic and signaling the end of the process.
         """
         self.app()  #run the application
+        self.thread.started.connect(self.run)
         self.finished.emit()  #Emit the end signal
 
     def apply(self, app):
