@@ -230,7 +230,11 @@ class Boonify(QMainWindow):
         self.refresh()
 
     def setup_callbacks(self):
-        # connect UI signals here
+        """
+        Connect UI signals to controller callbacks.
+            Links the graph editor's `graph_changed` signal to the handler
+            `on_graph_changed`, if the graph editor exists.
+        """
         if hasattr(self, "graph_editor"):
             self.graph_editor.graph_changed.connect(self.on_graph_changed)
 
@@ -413,6 +417,8 @@ class Boonify(QMainWindow):
             self.graph_editor.setup_design(self.boon)
             self.graph_editor.refresh_next_node_id()
 
+            self.disablecallback = False
+
     def redo(self):
         """
         Redo the last undone operation by navigating through the history list and updating
@@ -427,6 +433,8 @@ class Boonify(QMainWindow):
             self.refresh()
             self.graph_editor.setup_design(self.boon)
             self.graph_editor.refresh_next_node_id()
+
+            self.disablecallback = False
 
     def add_history(self):
         """
@@ -456,8 +464,6 @@ class Boonify(QMainWindow):
             self.disablecallback = False  #Enable the design callback
         else:
             self.hupdate = False  #No changes.
-        #PRINT THE HISTORY
-        #self.show_history()
 
     def show_history(self):
         """
@@ -559,6 +565,7 @@ class Boonify(QMainWindow):
 
 
 class Graph(QObject):
+
     graph_changed = pyqtSignal()
 
     def __init__(self, canvas):
@@ -570,6 +577,8 @@ class Graph(QObject):
         self.node_labels = {}
         self.next_node_id = 1
         self.edge_colors = {}
+        self.edge_labels = {}
+        self.edge_modules = {}
         self.default_edge_sign = 1   # + edge = green by default
         self.selected_nodes = set()
         self.selected_edge = None
@@ -593,12 +602,19 @@ class Graph(QObject):
     #DEF: NETWORK DESIGN
     def setup_design(self, boon):
         """
-        Sets up the design of the interaction graph and its visual representation. The method configures
-        node and edge properties, styles, positions, and visual elements on the canvas. It integrates
-        information from an existing interaction graph and generates an editable representation of the
-        network for visualization.
-        Attributes that affect the design are updated during this process, and the design callback is
-        temporarily disabled to avoid interference.
+        Sets up the visual and logical design of the interaction graph.
+
+        This method initializes the graph structure from the provided BooN model,
+        configures node positions, labels, and edge attributes, and prepares the
+        canvas for rendering. It also synchronizes edge signs and initializes
+        visual styling used in the interactive editor.
+
+            :param boon: External model containing the interaction graph and optional
+                node positions.
+            :type boon: BooN
+
+            :ivar SIGNCOLOR: Mapping from edge sign values to display colors.
+            :type SIGNCOLOR: dict
         """
         self.boon = boon
         self.canvas.axes.clear()
@@ -609,15 +625,18 @@ class Graph(QObject):
         ig = boon.interaction_graph  #Get the IG.
         self.graph = nx.DiGraph()
         self.graph.add_nodes_from(ig.nodes())
-        self.graph.add_edges_from(ig.edges())
+        for u, v, data in ig.edges(data=True):
+            self.graph.add_edge(u, v, sign=data.get("sign", 1))
 
         self.node_positions = getattr(boon, "pos", None) or nx.spring_layout(self.graph)
         self.node_labels = {node: str(node) for node in self.graph.nodes()}
         
         self.edge_colors = {}
         for edge in self.graph.edges():
-            sign = ig.get_edge_data(*edge).get("sign", 0)
-            self.edge_colors[edge]= self.SIGNCOLOR[sign]
+            sign = ig.get_edge_data(*edge).get("sign", 1)
+            # store sign INSIDE editable graph too
+            self.graph[edge[0]][edge[1]]["sign"] = sign
+            self.edge_colors[edge] = self.SIGNCOLOR[sign]
 
         self.redraw_graph()
 
@@ -632,10 +651,16 @@ class Graph(QObject):
 
     def _track_node_positions(self, dx, dy):
         """
-        Track position changes without redrawing (used during drag).
-        Stores positions for later commit.
-            :param dx: Change in x
-            :param dy: Change in y
+        Tracks node position updates during dragging without committing changes.
+
+        Updates the internal node position dictionary for all selected nodes
+        based on the drag delta and refreshes the visualization.
+
+            :param dx: Horizontal movement delta.
+            :type dx: float
+
+            :param dy: Vertical movement delta.
+            :type dy: float
         """
         #Update tracked positions
         for node in self.selected_nodes:
@@ -647,7 +672,12 @@ class Graph(QObject):
 
     def _commit_tracked_positions(self):
         """
-        Commit the tracked positions to the boon model and update the design.
+        Commits dragged node positions to the underlying BooN model.
+
+        Updates the persistent position storage for all selected nodes and
+        triggers a redraw of the graph.
+
+            :raises AttributeError: If the BooN model has no position attribute.
         """
         # Update boon positions
         if hasattr(self.boon, 'pos') and hasattr(self.boon, "pos"):
@@ -659,6 +689,15 @@ class Graph(QObject):
         print(f"Committed positions for nodes: {self.selected_nodes}")
 
     def _apply_edge_color(self, rgb):
+        """
+        Applies a visual color to the currently selected edge.
+
+        Updates the edge color mapping for the selected edge in both directions
+        (if bidirectional) and refreshes the graph display.
+
+            :param rgb: RGB color tuple (values in range [0, 1]).
+            :type rgb: tuple[float, float, float]
+        """
         if not self.selected_edge:
             return
         u, v = self.selected_edge
@@ -668,14 +707,40 @@ class Graph(QObject):
         self.redraw_graph()
 
     def change_edge_sign(self, sign):
+        """
+        Changes the sign (and color) of the currently selected edge.
+
+        Updates both the logical graph representation and the visual color mapping.
+        Emits a graph update signal after modification.
+
+            :param sign: New sign value for the edge.
+            :type sign: int
+
+            :raises QMessageBox.warning: If no edge is currently selected.
+        """
         if not self.selected_edge: #if no edge selected, show error
             QMessageBox.warning(None, "No edge selected", "Please click an edge first.")
             return
         
-        self.edge_colors[self.selected_edge] = self.SIGNCOLOR[sign]
+        u, v = self.selected_edge
+
+        # update visual color
+        self.edge_colors[(u, v)] = self.SIGNCOLOR[sign]
+
+        # update logical sign
+        if self.graph.has_edge(u, v):
+            self.graph[u][v]["sign"] = sign
+
         self.redraw_graph()
+        self.graph_changed.emit()
 
     def set_default_edge_sign(self, sign):
+        """
+        Sets the default sign used for newly created edges.
+
+            :param sign: Edge sign (typically +1 or -1).
+            :type sign: int
+        """
         self.default_edge_sign = sign
         print(f"Default edge sign set to {sign}")
 
@@ -686,10 +751,6 @@ class Graph(QObject):
             :param y: Y coordinate
         Find next integer id for the new node
         """
-        #nodes = list(self.graph.nodes)
-        #int_nodes = [n for n in nodes if isinstance(n, int)]
-        #new_id = max(int_nodes) + 1 if int_nodes else 1
-
         #Internal graph ID
         new_id = self.next_node_id
         self.next_node_id += 1
@@ -706,9 +767,11 @@ class Graph(QObject):
 
     def refresh_next_node_id(self):
         """
-        Recompute next internal node ID safely.
-        """
+        Recomputes the next available integer node ID.
 
+        Scans existing integer nodes and updates the internal counter to avoid
+        ID collisions.
+        """
         int_nodes = [n for n in self.graph.nodes if isinstance(n, int)]
 
         if int_nodes:
@@ -718,9 +781,13 @@ class Graph(QObject):
     
     def next_default_label(self):
         """
-        Return next available default node label.
-        Only labels matching x<number> are considered.
-        Renamed nodes are ignored.
+        Generates the next available default node label.
+
+        Only labels matching the pattern "x<number>" are considered. Custom
+        renamed nodes are ignored when computing the next index.
+            :return: Next generated label (e.g., "x3").
+            :rtype: str
+
         Example:
             x1, x2 -> x3
             tom, x2, x3 -> x4
@@ -739,9 +806,15 @@ class Graph(QObject):
 
     def _create_edge(self, source, target):
         """
-        Create an edge between two nodes (including self-loops).
-            :param source: Source node
-            :param target: Target node
+        Creates a directed edge between two nodes.
+
+        Adds the edge to the internal graph structure, assigns default sign and
+        visual styling, clears selection state, and triggers a redraw.
+
+            :param source: Source node identifier.
+            :param target: Target node identifier.
+            :type source: any
+            :type target: any
         """
         # clear preview safely first
         self._clear_edge_preview()
@@ -752,9 +825,9 @@ class Graph(QObject):
         if self.graph.has_edge(source, target):
             print(f"Edge {source} -> {target} already exists")
             return
-        self.graph.add_edge(source, target)
+        self.graph.add_edge(source, target, sign=self.default_edge_sign)
         self.edge_family_colors[(source, target)] = (1.0, 1.0, 1.0)
-        self.edge_colors[(source, target)] = self.SIGNCOLOR[self.default_edge_sign]  # Default to button chosen 
+        self.edge_colors[(source, target)] = (self.SIGNCOLOR[self.default_edge_sign]) 
         self.selected_nodes.clear()
         self.selected_edge = None
         self.double_click_node = None
@@ -765,10 +838,17 @@ class Graph(QObject):
 
     def _compute_self_loop_angle(self, node):
         """
-        Compute best angle for self-loop placement.
-        Returns angle in radians.
-        """
+        Computes an optimal placement angle for a self-loop edge.
 
+        Determines a direction that avoids overlapping neighboring nodes by
+        analyzing angular spacing around the node.
+
+            :param node: Node identifier.
+            :type node: any
+
+            :return: Angle in radians for loop placement.
+            :rtype: float
+        """
         neighbors = set(self.graph.predecessors(node)) | set(self.graph.successors(node))
         neighbors.discard(node)  # remove self-loop itself
 
@@ -811,6 +891,12 @@ class Graph(QObject):
     View
     """
     def _draw_nodes(self):
+        """
+        Renders all nodes on the canvas.
+
+        Draws graph nodes using Matplotlib with fixed styling (color, size,
+        borders) based on the current node position dictionary.
+        """
         nx.draw_networkx_nodes(
             self.graph, 
             self.node_positions, 
@@ -821,6 +907,11 @@ class Graph(QObject):
             )
         
     def _draw_labels(self):
+        """
+        Renders node labels on the graph.
+
+        Displays text labels for each node using the current label mapping.
+        """
         nx.draw_networkx_labels(
             self.graph, 
             self.node_positions, 
@@ -830,6 +921,12 @@ class Graph(QObject):
             )
         
     def _draw_edges(self):
+        """
+        Draws all edges in the graph.
+
+        Handles normal edges, bidirectional edges, and skips self-loops
+        (which are drawn separately).
+        """
         drawn_pairs = set()
         for u, v in self.graph.edges():
             # Self loop
@@ -847,6 +944,14 @@ class Graph(QObject):
                 self._draw_normal_edge(u, v)
 
     def _draw_normal_edge(self, u, v):
+        """
+        Draws a single directed edge between two nodes.
+
+            :param u: Source node.
+            :param v: Target node.
+            :type u: any
+            :type v: any
+        """
         nx.draw_networkx_edges(
             self.graph,
             self.node_positions,
@@ -860,6 +965,15 @@ class Graph(QObject):
             )
             
     def _draw_bidirectional_edges(self, u, v):
+        """
+        Draws two visually separated edges for a bidirectional connection.
+
+        Applies a perpendicular offset so that u→v and v→u edges are both
+        visible without overlap.
+
+            :param u: First node.
+            :param v: Second node.
+        """
         x1, y1 = self.node_positions[u]
         x2, y2 = self.node_positions[v]
         dx = x2 - x1
@@ -910,6 +1024,12 @@ class Graph(QObject):
     import math
 
     def _draw_self_loops(self):
+        """
+        Draws self-loop edges for nodes connected to themselves.
+
+        Uses a curved path and arrowhead to visually represent loops, and
+        adjusts orientation to avoid overlap with nearby nodes.
+        """
         from matplotlib.patches import PathPatch, FancyArrowPatch
         from matplotlib.path import Path
 
@@ -919,14 +1039,14 @@ class Graph(QObject):
 
             x, y = self.node_positions[u]
 
-            # --- 1. choose loop orientation
+            # 1. choose loop orientation
             angle = self._compute_self_loop_angle(u)
 
             radius = 0.07
             cx = x + radius * math.cos(angle)
             cy = y + radius * math.sin(angle)
 
-            # --- 2. circular arc
+            # 2. circular arc
             R = 0.05
 
             theta1 = 0.14 * np.pi
@@ -942,7 +1062,7 @@ class Graph(QObject):
             xr = (xs - cx) * np.cos(rot) - (ys - cy) * np.sin(rot) + cx
             yr = (xs - cx) * np.sin(rot) + (ys - cy) * np.cos(rot) + cy
 
-            # --- 3. path
+            # 3. path
             verts = np.column_stack([xr, yr])
 
             # shorten curve slightly so arrowhead sits exactly at end
@@ -966,7 +1086,7 @@ class Graph(QObject):
 
             self.axes.add_patch(patch)
 
-            # --- 4. arrow attached to end of loop
+            # 4. arrow attached to end of loop
 
             # use last segment direction
             p0 = verts[-arrow_backoff - 1]
@@ -989,7 +1109,9 @@ class Graph(QObject):
 
     def _draw_family_circles(self):
         """
-        Draw family color circles on edges.
+        Draws small colored markers on edges to represent "family colors".
+        These markers are overlaid on edges and self-loops to indicate
+        additional grouping or categorization.
         BASIC_FAMILY_COLOR (white) = not drawn.
         """
         if not self.show_family_colors:
@@ -1097,7 +1219,7 @@ class Graph(QObject):
                 py = dx / norm
                 offset = 0.02
 
-                # IMPORTANT: determine which directed edge we are drawing
+                # determine which directed edge we are drawing
                 if (u, v) in self.edge_colors:   # or edge_family_colors
                     # THIS is u -> v (top edge in your drawing logic)
                     shift = -1
@@ -1127,7 +1249,10 @@ class Graph(QObject):
     
     def _apply_zoom(self):
         """
-        Apply zoom centered on the canvas.
+        Applies zoom transformation to the canvas view.
+
+        Adjusts axis limits based on the current zoom factor to scale the
+        graph view around its center.
         """
         ax = self.canvas.axes
         center_x = 0.5
@@ -1140,7 +1265,18 @@ class Graph(QObject):
         ax.set_ylim(center_y - height / 2, center_y + height / 2)
 
     def _draw_edge_preview(self, x1, y1, x2, y2):
-        # ALWAYS clear first
+        """
+        Draws a temporary preview line for edge creation.
+
+        Used during interactive edge creation to show a dashed line between
+        source node and current mouse position.
+
+            :param x1: Start X coordinate.
+            :param y1: Start Y coordinate.
+            :param x2: End X coordinate.
+            :param y2: End Y coordinate.
+        """
+        # always clear first
         if self.edge_preview is not None:
             try:
                 self.edge_preview.remove()
@@ -1159,10 +1295,15 @@ class Graph(QObject):
             zorder=1000,
         )
 
-        # CRITICAL: force immediate render (not draw_idle)
+        # force immediate render (not draw_idle)
         self.canvas.draw()
     
     def _clear_edge_preview(self):
+        """
+        Removes the current edge preview from the canvas.
+
+        Clears temporary visualization used during interactive edge creation.
+        """
         if self.edge_preview is not None:
             try:
                 self.edge_preview.remove()
@@ -1173,7 +1314,10 @@ class Graph(QObject):
 
     def toggle_family_colors(self):
         """
-        Show/hide family color circles.
+        Toggles visibility of edge family color overlays.
+
+        Enables or disables rendering of additional edge grouping markers
+        and refreshes the graph display.
         """
         self.show_family_colors = not self.show_family_colors
 
@@ -1182,6 +1326,13 @@ class Graph(QObject):
         self.redraw_graph()
 
     def redraw_graph(self):
+        """
+        Redraws the entire graph canvas.
+    
+        Clears the axes and reconstructs the full visualization including:
+        nodes, labels, edges, self-loops, family markers, and zoom state.
+        Preserves temporary edge preview if active.
+        """
         # store preview endpoints before clearing
         preview = self.edge_preview
         preview_data = None
@@ -1192,15 +1343,22 @@ class Graph(QObject):
                 preview_data = (xdata, ydata)
             except Exception:
                 preview_data = None
+
         self.axes.clear()
+        self.axes.set_aspect('equal', adjustable='box')
+        self.axes.set_frame_on(False)
+        self.axes.axis('off')
+
         self.selection_rect_patch=None
+
         self._draw_nodes()
         self._draw_labels()
         self._draw_edges()
         self._draw_self_loops()
         self._draw_family_circles()
         self._apply_zoom()
-        # recreate preview properly (IMPORTANT FIX)
+
+        # recreate preview edge properly
         if preview_data is not None:
             self.edge_preview = self.axes.plot(
                 preview_data[0],
@@ -1213,8 +1371,8 @@ class Graph(QObject):
             )[0]
         else:
             self.edge_preview = None
+
         self.canvas.draw()
-        self.canvas.axes.set_axis_off()
         
     
     """
@@ -1441,6 +1599,12 @@ class Graph(QObject):
         print(f"Selected nodes (rectangle): {self.selected_nodes}")
 
     def delete_selection(self):
+        """
+        Delete selected nodes or edges from the graph.
+            If nodes are selected, remove them and all connected edges.
+            If no nodes are selected but an edge is selected, remove that edge.
+            If nothing is selected, show a warning message.
+        """
         if self.selected_nodes: #if select node
             self._delete_selected_nodes() #delete nodes and associated edges
             self.selected_edge=None #clear edge selection when nodes deleted
@@ -1478,6 +1642,12 @@ class Graph(QObject):
         self.graph_changed.emit()
     
     def _delete_selected_edge(self):
+        """
+        Delete the currently selected edge from the graph.
+            Removes the edge from the NetworkX graph and clears any associated
+            visual metadata such as edge colors and family colors. Then refreshes
+            the graph and clears selection state.
+        """
         if not self.selected_edge:
             return
         if self.graph.has_edge(*self.selected_edge):
@@ -1658,18 +1828,35 @@ class Graph(QObject):
         return math.hypot(px - closest_x, py - closest_y)
     
     def zoom_in(self):
+        """
+        Increase the zoom level of the graph view.
+            Multiplies the current zoom factor by 1.2 and redraws the graph.
+        """
         self.zoom_factor *= 1.2
         self.redraw_graph()
     
     def zoom_out(self):
+        """
+        Decrease the zoom level of the graph view.
+            Divides the current zoom factor by 1.2 and redraws the graph.
+        """
         self.zoom_factor /= 1.2
         self.redraw_graph()
     
     def reset_zoom(self):
+        """
+        Reset the zoom level to the default value.
+            Sets zoom factor back to 1.0 and redraws the graph.
+        """
         self.zoom_factor = 1.0
         self.redraw_graph()
     
     def pick_edge_color(self):
+        """
+        Open a color picker to set the color of the selected edge.
+            If no edge is selected, a warning is shown. Otherwise, the user
+            selects a color which is applied to the edge.
+        """
         if not self.selected_edge:
             QMessageBox.warning(self, "No edge selected", "Select an edge first.")
             return
@@ -1680,6 +1867,11 @@ class Graph(QObject):
         self._apply_edge_color(rgb)
 
     def set_edge_color_from_palette(self, color_name):
+        """
+        Set the color of the selected edge using a predefined palette color.
+            Converts the selected hex color to RGB, stores it in edge_family_colors,
+            updates the graph, and emits a change signal.
+        """
         if not self.selected_edge:
             QMessageBox.warning(None, "No edge selected", "Select an edge first.")
             return
@@ -1697,6 +1889,11 @@ class Graph(QObject):
         self.graph_changed.emit()
 
     def setup_color_menu(self, parent):
+        """
+        Initialize the edge color palette menu.
+            Defines available colors, sets initial visibility count, creates the
+            QMenu container, and builds the initial palette UI.
+        """
         self.color_palette = [
             ("Pastel pink", "#FFC0E7"),
             ("Pastel green", "#CAFDCB"),
@@ -1732,6 +1929,11 @@ class Graph(QObject):
         self.color_menu.popup(QCursor().pos())
 
     def build_color_palette(self):
+        """
+        Build the color palette UI inside the menu.
+            Creates a grid of color buttons, each applying a color when clicked.
+            Adds controls to show more or fewer colors dynamically.
+        """
         self.color_menu.clear()
         palette_widget=QWidget()
         layout=QGridLayout()
@@ -1766,16 +1968,29 @@ class Graph(QObject):
         self.color_menu.addAction(widget_action)
 
     def show_more_colors(self):
+        """
+        Increase the number of visible colors in the palette.
+            Expands visible color count and rebuilds the palette UI.
+        """
         self.visible_colors+=5
         self.build_color_palette()
         self.color_menu.popup(self.color_menu.pos())
 
     def show_less_colors(self):
+        """
+        Decrease the number of visible colors in the palette.
+            Reduces visible color count (minimum 5) and rebuilds the palette UI.
+        """
         self.visible_colors = max(5, self.visible_colors - 5)
         self.build_color_palette()
         self.color_menu.popup(self.color_menu.pos())
 
     def set_family_color(self, color_value):
+        """
+        Set a family color for the selected edge.
+            Stores the color in edge_family_colors, updates the display,
+            and emits a graph change signal. Requires an edge to be selected.
+        """
         if not self.selected_edge:
             QMessageBox.warning(self, "No edge selected", "Select an edge first.")
             return
@@ -1792,87 +2007,97 @@ class Graph(QObject):
 class Network:
     """
     Conversion layer between Graph and BooN.
-    No UI, Qt, refresh/history logic.
+    This class handles transformation between the GUI graph representation and the BooN
+    logical model, without UI, Qt rendering, or history management responsibilities.
+
+        :ivar boon: Internal BooN logical model instance used for conversions.
+        :type boon: BooN
     """
     def __init__(self):
         self.boon = BooN()
 
-    def graph_to_boon(self, graph_editor, current_boon = None):
+    def graph_to_boon(self, graph_editor, current_boon=None):
         """
-        Convert Graph into BooN.
+        Converts a GUI graph editor structure into a BooN logical model.
+
+        This method maps graph nodes to SymPy symbols, builds an interaction graph,
+        and generates a BooN object using library functions. It also post-processes
+        logical dependencies to correctly represent inhibitory interactions using Not().
+
+            :param graph_editor: GUI graph editor containing nodes, edges, and metadata.
+            :param current_boon: Optional fallback BooN model used if conversion fails.
+            :return: Converted BooN model.
+            :rtype: BooN
         """
+        from sympy import Not, And, symbols
+    
         graph = graph_editor.graph
-
-        # Build symbol mapping
+    
+        # 1. Build symbol mapping
         id_to_symbol = {}
-
         for node_id, label in graph_editor.node_labels.items():
-
             if isinstance(label, str):
                 label = label.strip()
-
             if not label:
                 label = f"x{node_id}"
-
             id_to_symbol[node_id] = symbols(label)
-
-        # Build interaction graph
+    
+        # 2. Build interaction graph
         ig = nx.DiGraph()
-
         for symbol in id_to_symbol.values():
             ig.add_node(symbol)
-
-        # Add edges
-        for edge in graph.edges():
-
-            src, tgt = edge
-
-            if src not in id_to_symbol:
+    
+        for u, v in graph_editor.graph.edges():
+            if u not in id_to_symbol or v not in id_to_symbol:
                 continue
-
-            if tgt not in id_to_symbol:
-                continue
-
-            src_symbol = id_to_symbol[src]
-            tgt_symbol = id_to_symbol[tgt]
-
-            sign = self._extract_edge_sign(edge, graph_editor)
-
-            color = graph_editor.edge_colors.get(edge, (0, 0, 0))
-
-            module = {sign}
-
-            ig.add_edge(
-                src_symbol,
-                tgt_symbol,
-                sign=sign,
-                module=module,
-                color=color
-            )
-
-        # Build BooN
+            src_symbol = id_to_symbol[u]
+            tgt_symbol = id_to_symbol[v]
+            sign = graph[u][v].get("sign", 1)
+            module = graph_editor.edge_modules.get((u, v), {1})
+            label = graph_editor.edge_labels.get((u, v), "")
+            color = graph_editor.edge_colors.get((u, v), (0, 0, 0))
+            ig.add_edge(src_symbol, tgt_symbol, sign=sign, module=module, label=label, color=color)
+    
+        # 3. Build BooN using from_ig (library handles sign if supported)
         try:
             boon = BooN.from_ig(ig)
-
         except ValueError:
             if current_boon is not None:
                 boon = current_boon.copy()
             else:
                 boon = BooN()
-
-        # Store positions
+    
+        # FIX: Post-process desc to wrap negative-sign regulators in Not()
+        for tgt_symbol in list(boon.desc.keys()):
+            # Collect regulators for this target
+            regulators = []
+            for u, v, data in ig.edges(data=True):
+                if v == tgt_symbol:
+                    sign = data.get("sign", 1)
+                    regulator = u if sign == 1 else Not(u)
+                    regulators.append(regulator)
+            if regulators:
+                boon.desc[tgt_symbol] = And(*regulators)
+    
+        # 4. Store positions
         boon.pos = {}
-
         for node_id, position in graph_editor.node_positions.items():
-
             if node_id in id_to_symbol:
                 boon.pos[id_to_symbol[node_id]] = position
-
+    
         return boon
-
+    
+    from sympy import Not
     def boon_to_graph(self, boon, graph_editor):
         """
-        Populate graph editor from BooN.
+        Converts a BooN logical model back into a GUI graph representation.
+
+        This method rebuilds nodes, edges, positions, labels, and visual properties
+        from the BooN interaction graph and updates the graph editor accordingly.
+
+            :param boon: BooN model to convert.
+            :param graph_editor: Target GUI graph editor to populate.
+            :return: None
         """
         ig = boon.interaction_graph
 
@@ -1884,7 +2109,7 @@ class Network:
 
         symbol_to_id = {}
 
-        # Nodes
+        # 1.Nodes
         for index, node in enumerate(ig.nodes(), start=1):
 
             symbol_to_id[node] = index
@@ -1898,36 +2123,26 @@ class Network:
             else:
                 graph_editor.node_positions[index] = (0.0, 0.0)
 
-        # Edges
+        # 2.Edges
         for src, tgt, data in ig.edges(data=True):
-
             src_id = symbol_to_id[src]
             tgt_id = symbol_to_id[tgt]
 
-            graph_editor.graph.add_edge(src_id, tgt_id)
+            graph_editor.graph.add_edge(src_id, tgt_id, sign=data.get("sign", 1))
 
-            sign = data.get("sign", 0)
+            sign = data.get("sign", 1)
+
+            if sign == -1:
+                influence = Not(src)
+            else:
+                influence = src
 
             graph_editor.edge_colors[(src_id, tgt_id)] = graph_editor.SIGNCOLOR.get(sign, "black")
 
+            graph_editor.edge_modules[(src_id, tgt_id)]= data.get("module", {1})
+            graph_editor.edge_labels[(src_id, tgt_id)]= data.get("label", "")
+
         graph_editor.redraw_graph()
-
-    #helper
-    def _extract_edge_sign(self, edge, graph_editor):
-        """
-        Convert edge color -> logical sign.
-        """
-
-        color = graph_editor.edge_colors.get(edge)
-
-        if color == graph_editor.SIGNCOLOR[1]:
-            return 1
-
-        if color == graph_editor.SIGNCOLOR[-1]:
-            return -1
-
-        return 0
-        
 
 
 # DEF:  WIDGET CLASSES
@@ -2086,9 +2301,21 @@ class View(QDialog):
         and refreshes the view accordingly.
             :return: None
         """
-        self.parent.boon.dnf() #convert all formulas into DNF
-        self.initialize_view()  #Refresh the view with converted formulas
+        try:
+            # optional safety only (does not modify logic)
+            if hasattr(self.parent.boon, "desc"):
+                for k, v in self.parent.boon.desc.items():
+                    if isinstance(v, str):
+                        self.parent.boon.desc[k] = parse_expr(v)
 
+            self.parent.boon.dnf() #convert all formulas into DNF
+            self.initialize_view()  #Refresh the view with converted formulas
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "DNF ERROR",
+                f"DNF conversion failed:\n{str(e)}"
+                )
 
 
 class StableStates(QDialog):
@@ -2124,8 +2351,12 @@ class StableStates(QDialog):
 
     def cb_styling(self):
         """
-        Updates the current style setting from the user interface and refreshes the stable states view.
-            :return: None.
+        Updates the formula display style and refreshes the view.
+
+        This method changes how formulas are rendered (logical, Python, etc.)
+        based on user selection.
+
+            :return: None
         """
         self.style = self.Style.currentText() #change the display style
         self.stablestates()  #updates stable states view with applied style
@@ -2542,6 +2773,7 @@ class Threader(QObject):
 
         #Create the thread
         self.thread = QThread()
+        self.thread.started.connect(self.run)
         self.moveToThread(self.thread)
         self.thread.start()
 
@@ -2551,9 +2783,10 @@ class Threader(QObject):
         completion. The function encompasses two main operations: invoking the
         application logic and signaling the end of the process.
         """
-        self.app()  #run the application
-        self.thread.started.connect(self.run)
-        self.finished.emit()  #Emit the end signal
+        try:
+            self.app()  #run the application
+        finally:
+            self.finished.emit()  #Emit the end signal
 
     def apply(self, app):
         """
@@ -2572,6 +2805,7 @@ class Threader(QObject):
             :return: None
         """
         self.thread.quit()
+        self.thread.wait()
 
 
 
