@@ -33,7 +33,7 @@ from pulp import PULP_CBC_CMD
 #PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import QToolButton, QMenu, QWidget, QGridLayout, QPushButton, QWidgetAction, QMessageBox, QColorDialog
+from PyQt5.QtWidgets import QToolButton, QMenu, QWidget, QGridLayout, QPushButton, QWidgetAction, QMessageBox, QColorDialog, QLabel, QVBoxLayout, QHBoxLayout
 from PyQt5.QtGui import QIcon, QPixmap, QStandardItemModel, QStandardItem, QColor, QCursor
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
@@ -114,13 +114,17 @@ class Boonify(QMainWindow):
         #loadUi('BooNGui/boonify.ui', self)
         ui_path = os.path.join(os.path.dirname(__file__), 'BooNGui', 'boonify.ui')
         loadUi(ui_path, self)
-        self.setGeometry(600, 100, 800, 800)
+        self.setMinimumSize(0, 0)
+
+        # Disable the default Qt toolbar context menu (show/hide toolbars) that appears on right-click outside the canvas.
+        self.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
 
         #STEP: initialize the Gui state
         self.boon = BooN()  #Current BooN
         self.network = Network()
         self.filename = ""  #Current filename
-        self.history = [None] * HSIZE  #History
+        self.history = [None] * HSIZE  #History of BooN snapshots
+        self.color_history = [None] * HSIZE  #History of edge_family_colors snapshots (parallel to history)
         self.hindex = 0  #Index of the last BooN added in the history.
         self.hupdate = False  #Flag determining whether the history is updated.
         self.saved = True  #Flag determining whether the current BooN is saved.
@@ -177,6 +181,7 @@ class Boonify(QMainWindow):
 
         # STEP: Create graph editor ON THE REAL CANVAS
         self.graph_editor = Graph(self.canvas)
+        self.graph_editor._boonify_parent = self  # back-reference for history callbacks
 
         self.graph_editor.graph_changed.connect(self.on_graph_changed)
 
@@ -213,9 +218,13 @@ class Boonify(QMainWindow):
 
         # Connect action directly to opening palette
         self.actionFamilyColor.triggered.connect(self.graph_editor.open_color_palette)
-        self.actionHideFamilyColor.triggered.connect(self.graph_editor.toggle_family_colors)
+        #self.actionHideFamilyColor.triggered.connect(self.graph_editor.toggle_family_colors)
         # setup palette (no QAction binding here anymore)
         self.graph_editor.setup_color_menu(self)
+
+        #STEP: Setup resize node menu
+        self.graph_editor.setup_resize_menu(self)
+        self.actionResizeNode.triggered.connect(self.graph_editor.open_resize_menu)
 
 
     def on_graph_changed(self):
@@ -380,90 +389,109 @@ class Boonify(QMainWindow):
     #DEF: HISTORY MANAGEMENT
     def history_raz(self):
         """
-        Resets the history and initializes it with the current state of BooN. It clears
-        the history, sets the history index to the starting position, and ensures that
-        the history update flag is reset.
-            :ivar history: A list to record the history of BooN states. Initially cleared
-                and reinitialized to a default size, HSIZE.
-            :ivar hindex: An integer representing the index position of the last BooN state
-                added to the history. Reset to 0 after cleaning history.
-            :ivar hupdate: A boolean flag indicating whether the history is updated. Set to
-                False after resetting the history.
+        Resets both BooN history and color history, then records the current state.
+            :ivar history: BooN snapshot list, size HSIZE.
+            :ivar color_history: edge_family_colors snapshot list, size HSIZE (parallel to history).
+            :ivar hindex: Current position in both history lists.
+            :ivar hupdate: Flag indicating whether a new entry was recorded.
         """
-        self.history = [None] * HSIZE  #History cleaning
-        self.hindex = 0  #Index of the last BooN added in the history
-        self.add_history()  #Initialize the history with the current BooN
-        self.hupdate = False  #Flag determining whether the history is updated
-        self.display_saved_flag()  #The BooN is saved.
+        self.history = [None] * HSIZE
+        self.color_history = [None] * HSIZE
+        self.hindex = 0
+        self.add_history()
+        self.hupdate = False
+        self.display_saved_flag()
 
     def undo(self):
         """
-        Restores the previous state from the history while preventing disruptive updates.
-        This method decrements the history index and restores the previous state of the
-        `boon` attribute using the corresponding entry in the `history`. It ensures
-        that no unwanted side effects occur during the update process. After restoring
-        the state, it refreshes the current state and reinitializes necessary design
-        parameters.
-            :raises IndexError: Raised if the history operation fails due to an 
-                invalid index or empty history.
+        Restores the previous BooN and edge_family_colors from the parallel history stacks.
+        Colors are restored before setup_design so the internal redraw uses them.
             :return: None
         """
         hindex = (self.hindex - 1) % HSIZE
-        if self.history[hindex]:
-            self.disablecallback = True  #Prevent disruptive updates by disabling callback.
-            self.boon = self.history[hindex].copy()  #restore the previous BooN
-            self.hindex = hindex  #update the history index
-            self.refresh()
-            self.graph_editor.setup_design(self.boon)
-            self.graph_editor.refresh_next_node_id()
-
-            self.disablecallback = False
+        print(f"[UNDO] from hindex={self.hindex} -> {hindex}")
+        print(f"[UNDO] color_history slots: { {i: self.color_history[i] for i in range(HSIZE) if self.color_history[i] is not None} }")
+        if self.history[hindex] is None:
+            print(f"[UNDO] slot {hindex} is None, stopping")
+            return
+        self.disablecallback = True
+        self.boon = self.history[hindex].copy()
+        self.graph_editor.edge_family_colors = dict(self.color_history[hindex] or {})
+        print(f"[UNDO] restoring colors: {self.color_history[hindex]}")
+        self.hindex = hindex
+        self.refresh()
+        self.graph_editor.setup_design(self.boon)
+        self.graph_editor.refresh_next_node_id()
+        self.disablecallback = False
 
     def redo(self):
         """
-        Redo the last undone operation by navigating through the history list and updating
-        the current state. This method ensures that callback functions are temporarily
-        disabled during the operation to avoid disruptive updates.
+        Redo the last undone operation using the parallel history stacks.
+        Colors are restored before setup_design so the internal redraw uses them.
         """
         hindex = (self.hindex + 1) % HSIZE
-        if self.history[hindex]:
-            self.disablecallback = True  #Prevent disruptive updates by disabling callback.
-            self.boon = self.history[hindex].copy()  #copy the current Boon
-            self.hindex = hindex
-            self.refresh()
-            self.graph_editor.setup_design(self.boon)
-            self.graph_editor.refresh_next_node_id()
-
-            self.disablecallback = False
+        if self.history[hindex] is None:
+            return
+        self.disablecallback = True
+        self.boon = self.history[hindex].copy()
+        self.graph_editor.edge_family_colors = dict(self.color_history[hindex] or {})
+        self.hindex = hindex
+        self.refresh()
+        self.graph_editor.setup_design(self.boon)
+        self.graph_editor.refresh_next_node_id()
+        self.disablecallback = False
 
     def add_history(self):
         """
-        Adds the current BooN to the history if it differs from the last saved state. This method ensures
-        that changes to the BooN descriptor are tracked and recorded appropriately in the history buffer.
-        It also manages internal state flags to enable or disable disruptive behaviors such as callbacks
-        when updating history. The history index is circularly updated to maintain a fixed-size
-        history buffer.
-            attribute self.hindex: Index of the current position in the history.
-            attribute self.boon.desc: Descriptor of the current BooN.
-            attribute self.disablecallback: Boolean that disables callback updates when `True`.
-            attribute self.hupdate: Boolean that indicates whether the history has been updated.
+        Records the current BooN and edge_family_colors into the parallel history stacks
+        if the BooN descriptor has changed since the last recorded entry.
+
+        Both self.history (BooN snapshots) and self.color_history (edge_family_colors
+        snapshots) are always advanced together so their indices stay in sync.
+
+            WARNING: BooN comparison is on descriptors only (see BooN.__eq__).
+            Color-only changes do NOT advance this history — use add_color_history()
+            for those.
             :return: None
         """
         hindex = self.hindex
-        if self.boon != self.history[hindex]:  #WARNING: The BooN comparison operates on descriptors only, not on positions or style.
-
-            self.disablecallback = True  #Prevent disruptive updates by disabling callback.
-            self.hupdate = True  #Descriptor is changed.
-
-            hindex = (hindex + 1) % HSIZE  #Update the history
+        if self.boon != self.history[hindex]:
+            self.disablecallback = True
+            self.hupdate = True
+            hindex = (hindex + 1) % HSIZE
             self.history[hindex] = self.boon.copy()
+            self.color_history[hindex] = dict(getattr(self.graph_editor, "edge_family_colors", {}))
             self.hindex = hindex
-
-            if self.history[hindex] and self.history[hindex].desc:  #The current BooN is modified
+            if self.history[hindex] and self.history[hindex].desc:
                 self.display_saved_flag(False)
-            self.disablecallback = False  #Enable the design callback
+            self.disablecallback = False
         else:
-            self.hupdate = False  #No changes.
+            self.hupdate = False
+
+    def add_color_history(self):
+        """
+        Records a color-only change into both parallel history stacks.
+        Called by set_edge_color_from_palette and set_family_color after updating
+        edge_family_colors, when the BooN descriptor itself has not changed.
+
+        Advances to a new slot only when the color dict actually differs from the
+        last recorded snapshot, so picking the same color twice stays as one entry.
+            :return: None
+        """
+        current_colors = dict(getattr(self.graph_editor, "edge_family_colors", {}))
+        hindex = self.hindex
+        #print(f"[COLOR_HISTORY] called. hindex={hindex}, current_colors={current_colors}, last_colors={self.color_history[hindex]}")
+        if current_colors == self.color_history[hindex]:
+            #print(f"[COLOR_HISTORY] skipped — no change")
+            return  # nothing new to record
+        self.disablecallback = True
+        hindex = (hindex + 1) % HSIZE
+        self.history[hindex] = self.boon.copy()
+        self.color_history[hindex] = current_colors
+        self.hindex = hindex
+        #print(f"[COLOR_HISTORY] saved at slot {hindex}: {current_colors}")
+        self.display_saved_flag(False)
+        self.disablecallback = False
 
     def show_history(self):
         """
@@ -472,10 +500,12 @@ class Boonify(QMainWindow):
         history index is highlighted, and associated data details are presented using
         a plain tabular format. If a history entry lacks data, it displays a placeholder.
         """
-        view = [([i] if i == self.hindex else i,
-                 tabulate([(var, logic.prettyform(eq, theboon.style)) for var, eq in theboon.desc.items()], tablefmt='plain')
-                 if theboon else '-') for i, theboon in enumerate(self.history)]
-
+        view = []
+        for i, theboon in enumerate(self.history):
+            label = [i] if i == self.hindex else i
+            content = (tabulate([(var, logic.prettyform(eq, theboon.style)) for var, eq in theboon.desc.items()], tablefmt='plain')
+                       if theboon else '-')
+            view.append((label, content))
         os.system('cls')
         print(tabulate(view, tablefmt='grid'))
 
@@ -596,6 +626,12 @@ class Graph(QObject):
         self.dragging_nodes = False
         self.is_dragging = False
 
+        # Node size state (default/min = 600, max = 1800 = 3x default)
+        self.NODE_SIZE_DEFAULT: int = 600
+        self.NODE_SIZE_MAX: int = 1800
+        self.NODE_SIZE_STEP: int = 200
+        self.node_sizes: dict = {}  # per-node sizes; missing key = default
+
     """
     Model / Logic
     """
@@ -622,21 +658,30 @@ class Graph(QObject):
         #STEP: Creation of the pattern-network used for edge styling.
         #To prevent its inclusion in the BooN, the variable names are strings while the other nodes are integers or symbols.
         #STEP: Add  the interaction graph of the current BooN.
-        ig = boon.interaction_graph  #Get the IG.
+        ig = boon.interaction_graph
         self.graph = nx.DiGraph()
-        self.graph.add_nodes_from(ig.nodes())
-        for u, v, data in ig.edges(data=True):
-            self.graph.add_edge(u, v, sign=data.get("sign", 1))
 
-        self.node_positions = getattr(boon, "pos", None) or nx.spring_layout(self.graph)
-        self.node_labels = {node: str(node) for node in self.graph.nodes()}
-        
+        symbol_to_id = {}
+        for idx, sym_node in enumerate(sorted(ig.nodes(), key=str), start=1):
+            symbol_to_id[sym_node] = idx
+            self.graph.add_node(idx)
+
+        self.node_labels = {symbol_to_id[sym]: str(sym) for sym in ig.nodes()}
+
+        pos = getattr(boon, "pos", None)
+        if pos:
+            self.node_positions = {symbol_to_id[sym]: coord for sym, coord in pos.items() if sym in symbol_to_id}
+        else:
+            sym_layout = nx.spring_layout(ig)
+            self.node_positions = {symbol_to_id[sym]: coord for sym, coord in sym_layout.items()}
+
         self.edge_colors = {}
-        for edge in self.graph.edges():
-            sign = ig.get_edge_data(*edge).get("sign", 1)
-            # store sign INSIDE editable graph too
-            self.graph[edge[0]][edge[1]]["sign"] = sign
-            self.edge_colors[edge] = self.SIGNCOLOR[sign]
+        for u_sym, v_sym, data in ig.edges(data=True):
+            u_id = symbol_to_id[u_sym]
+            v_id = symbol_to_id[v_sym]
+            sign = data.get("sign", 1)
+            self.graph.add_edge(u_id, v_id, sign=sign)
+            self.edge_colors[(u_id, v_id)] = self.SIGNCOLOR[sign]
 
         self.redraw_graph()
 
@@ -894,15 +939,18 @@ class Graph(QObject):
         """
         Renders all nodes on the canvas.
 
-        Draws graph nodes using Matplotlib with fixed styling (color, size,
+        Draws graph nodes using Matplotlib with per-node sizing (color, size,
         borders) based on the current node position dictionary.
         """
+        nodes = list(self.graph.nodes())
+        sizes = [self.node_sizes.get(n, self.NODE_SIZE_DEFAULT) for n in nodes]
         nx.draw_networkx_nodes(
             self.graph, 
-            self.node_positions, 
+            self.node_positions,
+            nodelist=nodes,
             node_color='antiquewhite', 
             edgecolors='black', 
-            node_size=600, 
+            node_size=sizes, 
             ax=self.canvas.axes
             )
         
@@ -912,13 +960,32 @@ class Graph(QObject):
 
         Displays text labels for each node using the current label mapping.
         """
-        nx.draw_networkx_labels(
-            self.graph, 
-            self.node_positions, 
-            labels=self.node_labels, 
-            font_size=10, 
+        # Shift labels upward by this amount (in data-space units). 
+        # Increase to move higher, decrease or set to 0 for centered.
+        LABEL_VERTICAL_OFFSET = 0
+
+        shifted_positions = {
+            node: (x, y + LABEL_VERTICAL_OFFSET)
+            for node, (x, y) in self.node_positions.items()
+        }
+
+        # Apply wrapping to labels that contain separators
+        wrapped_labels = {
+            node: self._wrap_node_label(label)
+            for node, label in self.node_labels.items()
+        }
+
+        text_items = nx.draw_networkx_labels(
+            self.graph,
+            shifted_positions,
+            labels=wrapped_labels,   # use wrapped labels here
+            font_size=10,
+            font_weight='bold',
             ax=self.canvas.axes
-            )
+        )
+
+        for text in text_items.values():
+            text.set_zorder(25)
         
     def _draw_edges(self):
         """
@@ -952,6 +1019,10 @@ class Graph(QObject):
             :type u: any
             :type v: any
         """
+        # node_size must list sizes in the order of ALL nodes so networkx
+        # can correctly offset the arrowhead away from the target node border.
+        nodes = list(self.graph.nodes())
+        sizes = [self.node_sizes.get(n, self.NODE_SIZE_DEFAULT) for n in nodes]
         nx.draw_networkx_edges(
             self.graph,
             self.node_positions,
@@ -960,6 +1031,7 @@ class Graph(QObject):
             arrows=True,
             width=4,
             arrowsize=15,
+            node_size=sizes,
             #connectionstyle='arc3,rad=0.0',
             ax=self.canvas.axes,
             )
@@ -969,29 +1041,49 @@ class Graph(QObject):
         Draws two visually separated edges for a bidirectional connection.
 
         Applies a perpendicular offset so that u→v and v→u edges are both
-        visible without overlap.
+        visible without overlap. The offset direction is determined by stable
+        sorted order of node names so it matches the hit-test in _get_nearest_edge.
 
             :param u: First node.
             :param v: Second node.
         """
         x1, y1 = self.node_positions[u]
         x2, y2 = self.node_positions[v]
-        dx = x2 - x1
-        dy = y2 - y1
-        length = math.hypot(dx, dy)
+
+        # Always derive the perpendicular vector from the canonical (sorted) direction
+        # so that px/py and the +/- offset signs are consistent across draw, hit-test,
+        # and family-circle placement regardless of which node is called u or v here.
+        if str(u) <= str(v):
+            can_x1, can_y1 = x1, y1
+            can_x2, can_y2 = x2, y2
+        else:
+            can_x1, can_y1 = x2, y2
+            can_x2, can_y2 = x1, y1
+
+        cdx = can_x2 - can_x1
+        cdy = can_y2 - can_y1
+        length = math.hypot(cdx, cdy)
         if length == 0:
-            return 
-        
-        # Perpendicular unit vector
-        px = -dy / length
-        py = dx / length
-        offset = 0.02 
-        
+            return
+
+        # Perpendicular unit vector (canonical frame: canonical_u -> canonical_v)
+        px = -cdy / length
+        py = cdx / length
+        offset = 0.02
+
+        # canonical_u side always gets +offset, canonical_v side (= the other node) always -offset.
+        # Map back to u/v: if u is the canonical_u, dir_uv=+1; otherwise dir_uv=-1.
+        dir_uv = 1 if str(u) <= str(v) else -1
+        dir_vu = -dir_uv
+
+        nodes = list(self.graph.nodes())
+        sizes = [self.node_sizes.get(n, self.NODE_SIZE_DEFAULT) for n in nodes]
+
         # Edge u -> v
         pos1 = dict(self.node_positions)
-        pos1[u] = (x1 + px * offset, y1 + py * offset)
-        pos1[v] = (x2 + px * offset, y2 + py * offset)
-        
+        pos1[u] = (x1 + px * offset * dir_uv, y1 + py * offset * dir_uv)
+        pos1[v] = (x2 + px * offset * dir_uv, y2 + py * offset * dir_uv)
+
         nx.draw_networkx_edges(
             self.graph,
             pos1,
@@ -1000,14 +1092,14 @@ class Graph(QObject):
             arrows=True,
             width=4,
             arrowsize=15,
-            #connectionstyle='arc3,rad=0.0',
+            node_size=sizes,
             ax=self.canvas.axes,
         )
 
         # Edge v -> u
         pos2 = dict(self.node_positions)
-        pos2[v] = (x2 - px * offset, y2 - py * offset)
-        pos2[u] = (x1 - px * offset, y1 - py * offset)
+        pos2[v] = (x2 + px * offset * dir_vu, y2 + py * offset * dir_vu)
+        pos2[u] = (x1 + px * offset * dir_vu, y1 + py * offset * dir_vu)
         nx.draw_networkx_edges(
             self.graph,
             pos2,
@@ -1016,7 +1108,7 @@ class Graph(QObject):
             arrows=True,
             width=4,
             arrowsize=15,
-            #connectionstyle='arc3,rad=0.0',
+            node_size=sizes,
             ax=self.canvas.axes,
         )
     
@@ -1029,6 +1121,8 @@ class Graph(QObject):
 
         Uses a curved path and arrowhead to visually represent loops, and
         adjusts orientation to avoid overlap with nearby nodes.
+        Loop size scales with the node size so the arc always sits outside
+        the node border regardless of how large the node is.
         """
         from matplotlib.patches import PathPatch, FancyArrowPatch
         from matplotlib.path import Path
@@ -1042,13 +1136,17 @@ class Graph(QObject):
             # 1. choose loop orientation
             angle = self._compute_self_loop_angle(u)
 
-            radius = 0.07
+            # Scale only the anchor radius so the loop stays outside the node
+            # border as the node grows, but keep R (arc size) fixed so the
+            # loop itself does not grow with the node.
+            size_scale = (self.node_sizes.get(u, self.NODE_SIZE_DEFAULT) / self.NODE_SIZE_DEFAULT) ** 0.25
+            radius = 0.07 * size_scale
+            R = 0.05  # fixed arc size
+
             cx = x + radius * math.cos(angle)
             cy = y + radius * math.sin(angle)
 
             # 2. circular arc
-            R = 0.05
-
             theta1 = 0.14 * np.pi
             theta2 = 1.9 * np.pi
 
@@ -1081,7 +1179,7 @@ class Graph(QObject):
                 linewidth=3,
                 capstyle='round',
                 joinstyle='round',
-                zorder=10
+                zorder=3
             )
 
             self.axes.add_patch(patch)
@@ -1102,7 +1200,7 @@ class Graph(QObject):
                 shrinkA=0,
                 shrinkB=0,
                 connectionstyle="arc3",
-                zorder=11
+                zorder=3
             )
 
             self.axes.add_patch(arrow)
@@ -1132,55 +1230,31 @@ class Graph(QObject):
             
                 x, y = self.node_positions[u]
 
-                # same geometry as _draw_self_loops
+                # same geometry as _draw_self_loops, scale with node size
                 angle = self._compute_self_loop_angle(u)
 
-                radius = 0.09
+                size_scale = (self.node_sizes.get(u, self.NODE_SIZE_DEFAULT) / self.NODE_SIZE_DEFAULT) ** 0.25
+                radius = 0.07 * size_scale
+                R = 0.05  # fixed arc size, matches _draw_self_loops
+
                 cx = x + radius * math.cos(angle)
                 cy = y + radius * math.sin(angle)
 
-                R = 0.07
-
-                theta1 = 0.15 * np.pi
-                theta2 = 1.85 * np.pi
-
-                thetas = np.linspace(theta1, theta2, 200)
+                theta1 = 0.14 * np.pi
+                theta2 = 1.9 * np.pi
+                thetas = np.linspace(theta1, theta2, 60)
 
                 xs = cx + R * np.cos(thetas)
                 ys = cy + R * np.sin(thetas)
 
                 rot = angle + np.pi
-
                 xr = ((xs - cx) * np.cos(rot) - (ys - cy) * np.sin(rot) + cx)
-
                 yr = ((xs - cx) * np.sin(rot) + (ys - cy) * np.cos(rot) + cy )
 
                 # place family marker halfway along loop
                 mid_idx = len(xr) // 2
-
                 mx = xr[mid_idx]
                 my = yr[mid_idx]
-
-                # tangent around midpoint
-                tx = xr[mid_idx + 1] - xr[mid_idx - 1]
-                ty = yr[mid_idx + 1] - yr[mid_idx - 1]
-
-                # normalize
-                norm = math.hypot(tx, ty)
-
-                if norm != 0:
-                    tx /= norm
-                    ty /= norm
-
-                # perpendicular (normal) vector
-                nx = -ty
-                ny = tx
-
-                # move circle slightly inward toward loop center
-                gap = 0.04
-
-                mx += nx * gap
-                my += ny * gap
 
                 self.axes.add_patch(
                     plt.Circle(
@@ -1215,22 +1289,29 @@ class Graph(QObject):
             # DOUBLE ASSOCIATION ONLY
             if self.graph.has_edge(v, u):
 
-                px = -dy / norm
-                py = dx / norm
                 offset = 0.02
 
-                # determine which directed edge we are drawing
-                if (u, v) in self.edge_colors:   # or edge_family_colors
-                    # THIS is u -> v (top edge in your drawing logic)
-                    shift = -1
+                # Derive px/py and sign from the CANONICAL (sorted) ordering,
+                # matching _draw_bidirectional_edges and _get_nearest_edge exactly.
+                if str(u) <= str(v):
+                    can_x1, can_y1 = x1, y1
+                    can_x2, can_y2 = x2, y2
                 else:
-                    # THIS is v -> u (bottom edge)
-                    shift = 1
+                    can_x1, can_y1 = x2, y2
+                    can_x2, can_y2 = x1, y1
 
-                sx = px * offset * shift
-                sy = py * offset * shift
+                cdx = can_x2 - can_x1
+                cdy = can_y2 - can_y1
+                px = -cdy / norm
+                py = cdx / norm
 
-                # midpoint of the SHIFTED edge (critical fix)
+                # u gets +offset if it is the canonical (smaller) node, else -offset
+                direction = 1 if str(u) <= str(v) else -1
+
+                sx = px * offset * direction
+                sy = py * offset * direction
+
+                # midpoint of the SHIFTED edge (use original x1/y1, x2/y2 node positions)
                 mx = ((x1 + sx) + (x2 + sx)) / 2
                 my = ((y1 + sy) + (y2 + sy)) / 2
 
@@ -1320,10 +1401,27 @@ class Graph(QObject):
         and refreshes the graph display.
         """
         self.show_family_colors = not self.show_family_colors
-
         print(f"Family colors visible: {self.show_family_colors}")
-
         self.redraw_graph()
+
+    def toggle_edge_sign(self, edge):
+        """
+        Toggle the sign and color of an edge.
+
+            :param edge: Edge tuple (src, tgt)
+            :return: None
+        """
+        src, tgt = edge
+        current_sign = self.graph[src][tgt].get("sign", 1)
+
+        new_sign = -1 if current_sign == 1 else 1
+        # update graph sign
+        self.graph[src][tgt]["sign"] = new_sign
+
+        # update edge color
+        self.edge_colors[(src, tgt)] = self.SIGNCOLOR[new_sign]
+        self.redraw_graph()
+        self.graph_changed.emit()
 
     def redraw_graph(self):
         """
@@ -1412,11 +1510,14 @@ class Graph(QObject):
                     # RESET EDGE MODE
                     self.edge_source = None
                 return
-            # Right-click on edge: select edge
+            # Right-click on edge: toggle sign OR select edge
             if nearest_edge is not None:
-                self.selected_edge = self._canonical_edge(*nearest_edge)
+                # Use the detected edge directly (not canonicalized) so that
+                # the correct directed edge is toggled in a bidirectional pair.
+                self.toggle_edge_sign(nearest_edge)
+                self.selected_edge = nearest_edge
                 self.selected_nodes.clear()
-                print(f"Selected edge: {nearest_edge}")
+                print(f"Toggled edge sign: {nearest_edge}")
                 return
         #left click on edge: select edge
         if event.button == 1 and nearest_edge is not None and nearest_node is None:
@@ -1716,29 +1817,44 @@ class Graph(QObject):
             if length == 0:
                 continue
 
-            # perpendicular unit vector
+            # Default perpendicular unit vector from local src->tgt direction.
+            # Used as-is for normal edges (offset=0 so it doesn't matter),
+            # and overridden below for bidirectional pairs.
             px = -dy / length
             py = dx / length
 
-            offset = 0.02
-
-            # IMPORTANT FIX:
-            # direction is ONLY based on edge direction (not tuple ordering)
-            #direction = 1 if (src, tgt) in self.graph.edges() else 1
-            direction = 1
+            # IMPORTANT: offset and direction MUST match _draw_bidirectional_edges.
             if self.graph.has_edge(tgt, src):
-                direction = -1
+                # Bidirectional pair: derive px/py and sign from the CANONICAL
+                # (sorted) ordering so they always match the drawing convention.
+                offset = 0.02
+                if str(src) <= str(tgt):
+                    can_x1, can_y1 = x1, y1
+                    can_x2, can_y2 = x2, y2
+                else:
+                    can_x1, can_y1 = x2, y2
+                    can_x2, can_y2 = x1, y1
+                cdx = can_x2 - can_x1
+                cdy = can_y2 - can_y1
+                px = -cdy / length
+                py = cdx / length
+                # src gets +offset if it is the canonical (smaller) node, else -offset
+                direction = 1 if str(src) <= str(tgt) else -1
+                hit_threshold = threshold
+            else:
+                offset = 0.0
+                direction = 1
+                hit_threshold = threshold
 
             ox = px * offset * direction
             oy = py * offset * direction
 
-            # apply offset ONLY to THIS directed edge
             x1o, y1o = x1 + ox, y1 + oy
             x2o, y2o = x2 + ox, y2 + oy
 
             dist = self._point_to_segment_distance(x, y, x1o, y1o, x2o, y2o)
 
-            if dist < threshold:
+            if dist < hit_threshold:
                 candidates.append((dist, (src, tgt)))
 
         if not candidates:
@@ -1869,8 +1985,9 @@ class Graph(QObject):
     def set_edge_color_from_palette(self, color_name):
         """
         Set the color of the selected edge using a predefined palette color.
-            Converts the selected hex color to RGB, stores it in edge_family_colors,
-            updates the graph, and emits a change signal.
+        Stores the RGB color in edge_family_colors, redraws, then records a
+        color-only history snapshot via add_color_history so that each individual
+        color assignment is independently undoable/redoable.
         """
         if not self.selected_edge:
             QMessageBox.warning(None, "No edge selected", "Select an edge first.")
@@ -1882,11 +1999,15 @@ class Graph(QObject):
 
         edge = self.selected_edge
         u, v = edge
-
         self.edge_family_colors[(u, v)] = rgb
 
         self.redraw_graph()
-        self.graph_changed.emit()
+        #print(f"[SET_COLOR] edge_family_colors after set: {self.edge_family_colors}")
+        if hasattr(self, "_boonify_parent"):
+            self._boonify_parent.add_color_history()
+        else:
+            #print(f"[SET_COLOR] WARNING: no _boonify_parent found!")
+            pass
 
     def setup_color_menu(self, parent):
         """
@@ -1917,6 +2038,7 @@ class Graph(QObject):
             ("White/None", "#FFFFFF")
             ]
         self.visible_colors = 5
+        self._boonify_parent = parent  # keep reference to Boonify window for menu actions
         self.color_menu = QMenu(parent)
         self.build_color_palette()
 
@@ -1931,39 +2053,95 @@ class Graph(QObject):
     def build_color_palette(self):
         """
         Build the color palette UI inside the menu.
-            Creates a grid of color buttons, each applying a color when clicked.
-            Adds controls to show more or fewer colors dynamically.
         """
         self.color_menu.clear()
-        palette_widget=QWidget()
-        layout=QGridLayout()
-        layout.setSpacing(5)
-        palette_widget.setLayout(layout)
+
+        palette_widget = QWidget()
+
+        main_layout = QVBoxLayout()
+        grid_layout = QGridLayout()
+
+        grid_layout.setSpacing(5)
+
+        # Color buttons 
         for i, (name, hex_color) in enumerate(self.color_palette[:self.visible_colors]):
-            button=QPushButton()
-            button.setFixedSize(32,32)
-            button.setStyleSheet(f""" QPushButton {{ background-color: {hex_color}; border: 1px solid black; border-radius: 16px; }} """)
-            button.clicked.connect(lambda _, c=hex_color: self.set_edge_color_from_palette(c))
-            row=i//5
-            col=i%5
-            layout.addWidget(button, row, col)
+            button = QPushButton()
+            button.setFixedSize(32, 32)
+            button.setStyleSheet(f"""QPushButton {{background-color: {hex_color};border: 1px solid black;border-radius: 16px;}}""")
+            button.clicked.connect(lambda _, c=hex_color:self.set_edge_color_from_palette(c))
+            row = i // 5
+            col = i % 5
+            grid_layout.addWidget(button, row, col)
+
+        main_layout.addLayout(grid_layout)
+
+        # Bottom controls row
+        controls_layout = QHBoxLayout()
+
+        # LEFT SIDE (+ and - together)
+        left_controls = QHBoxLayout()
+
         if self.visible_colors < len(self.color_palette):
-            plus_button=QPushButton("+")
-            plus_button.setFixedSize(32,32)
-            plus_button.setStyleSheet("""QPushButton {font-size: 18px; font-weight: bold; } """)
+            plus_button = QPushButton("+")
+            plus_button.setFixedSize(32, 32)
+            plus_button.setStyleSheet("""QPushButton {font-size: 18px;font-weight: bold;}""")
             plus_button.clicked.connect(self.show_more_colors)
-            row = self.visible_colors // 5
-            col = self.visible_colors % 5
-            layout.addWidget(plus_button, row, col)
+            left_controls.addWidget(plus_button)
+
         if self.visible_colors > 5:
             minus_button = QPushButton("-")
             minus_button.setFixedSize(32, 32)
-            minus_button.setStyleSheet("""QPushButton {font-size: 18px; font-weight: bold;} """)
+            minus_button.setStyleSheet("""QPushButton {font-size: 18px;font-weight: bold;}""")
             minus_button.clicked.connect(self.show_less_colors)
-            row = self.visible_colors // 5
-            col = self.visible_colors 
-            layout.addWidget(minus_button, row, col)
-        widget_action= QWidgetAction(self.color_menu)
+            left_controls.addWidget(minus_button)
+        controls_layout.addLayout(left_controls)
+
+        # Push next widget to far right
+        controls_layout.addStretch()
+
+        # RIGHT SIDE (Hide family colors button)
+        toggle_button = QPushButton()
+        toggle_button.setFixedSize(32, 32)
+
+        # Use Qt resource paths (same convention as the rest of the app).
+        # Reflect the CURRENT state so the icon always matches show_family_colors.
+        if self.show_family_colors:
+            icon = QIcon(":/icon/resources/family_color_sign.svg")
+            if icon.isNull():              # fallback: plain text label
+                toggle_button.setText("👁")
+        else:
+            icon = QIcon(":/icon/resources/no_family_color_sign.svg")
+            if icon.isNull():
+                toggle_button.setText("🚫")
+
+        if not icon.isNull():
+            toggle_button.setIcon(icon)
+            toggle_button.setIconSize(QSize(20, 20))
+
+        toggle_button.setToolTip("Show / Hide family colors")
+
+        # Wire directly to toggle_family_colors on THIS Graph object.
+        # Avoids the broken self.parent() call (Graph is a QObject, not a widget).
+        # Also trigger the menu action on the Boonify window if available,
+        # so the menu item's checked state stays in sync.
+        def _on_toggle():
+            self.toggle_family_colors()
+            if hasattr(self, "_boonify_parent") and hasattr(self._boonify_parent, "actionHideFamilyColor"):
+                # Block signals to avoid double-toggle; just sync the checked state.
+                action = self._boonify_parent.actionHideFamilyColor
+                action.blockSignals(True)
+                action.setChecked(not self.show_family_colors)
+                action.blockSignals(False)
+            # Rebuild palette so the icon reflects the new state.
+            self.build_color_palette()
+            self.color_menu.popup(self.color_menu.pos())
+
+        toggle_button.clicked.connect(_on_toggle)
+        controls_layout.addWidget(toggle_button)
+        # Add controls row to main layout
+        main_layout.addLayout(controls_layout)
+        palette_widget.setLayout(main_layout)
+        widget_action = QWidgetAction(self.color_menu)
         widget_action.setDefaultWidget(palette_widget)
         self.color_menu.addAction(widget_action)
 
@@ -1985,11 +2163,124 @@ class Graph(QObject):
         self.build_color_palette()
         self.color_menu.popup(self.color_menu.pos())
 
+    # ------------------------------------------------------------------ #
+    #  Node-size adjustment panel                                          #
+    # ------------------------------------------------------------------ #
+
+    def setup_resize_menu(self, parent):
+        """
+        Initialize the node-size adjustment menu.
+        Creates a QMenu container and builds the initial resize UI.
+        """
+        self._boonify_parent = getattr(self, "_boonify_parent", parent)
+        self.resize_menu = QMenu(parent)
+        self.build_resize_palette()
+
+    def open_resize_menu(self):
+        """Open the node-size panel at the current mouse position."""
+        if not hasattr(self, "resize_menu"):
+            return
+        if not self.selected_nodes:
+            QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
+            return
+        self.build_resize_palette()
+        self.resize_menu.popup(QCursor().pos())
+
+    def build_resize_palette(self):
+        """
+        Build the node-size adjustment UI inside the menu.
+
+        Shows an 'Adjust size' label flanked by - and + buttons, plus
+        a status line that indicates when the minimum or maximum size
+        has been reached for the selected node(s).
+        """
+        self.resize_menu.clear()
+
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(8, 6, 8, 6)
+        layout.setSpacing(4)
+
+        # Title label
+        title_label = QLabel("Adjust size")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+        layout.addWidget(title_label)
+
+        # Row with - / + buttons
+        row = QHBoxLayout()
+        row.setSpacing(6)
+
+        minus_btn = QPushButton("-")
+        minus_btn.setFixedSize(32, 32)
+        minus_btn.setStyleSheet("QPushButton { font-size: 20px; font-weight: bold; }")
+        minus_btn.clicked.connect(self._resize_decrease)
+        row.addWidget(minus_btn)
+
+        plus_btn = QPushButton("+")
+        plus_btn.setFixedSize(32, 32)
+        plus_btn.setStyleSheet("QPushButton { font-size: 20px; font-weight: bold; }")
+        plus_btn.clicked.connect(self._resize_increase)
+        row.addWidget(plus_btn)
+
+        layout.addLayout(row)
+
+        # Determine status based on selected nodes
+        status_label = QLabel("")
+        status_label.setAlignment(Qt.AlignCenter)
+
+        if not self.selected_nodes:
+            status_label.setStyleSheet("font-size: 10px; color: #888888;")
+        else:
+            sizes = [self.node_sizes.get(n, self.NODE_SIZE_DEFAULT) for n in self.selected_nodes]
+            if all(s <= self.NODE_SIZE_DEFAULT for s in sizes):
+                status_label.setText("Minimal size reached")
+                status_label.setStyleSheet("font-size: 10px; color: #CC4400; font-style: italic;")
+            elif all(s >= self.NODE_SIZE_MAX for s in sizes):
+                status_label.setText("Maximal size reached")
+                status_label.setStyleSheet("font-size: 10px; color: #CC4400; font-style: italic;")
+            else:
+                status_label.setStyleSheet("font-size: 10px; color: #888888;")
+
+        layout.addWidget(status_label)
+
+        container.setLayout(layout)
+
+        widget_action = QWidgetAction(self.resize_menu)
+        widget_action.setDefaultWidget(container)
+        self.resize_menu.addAction(widget_action)
+
+    def _resize_increase(self):
+        """Increase size of selected nodes by one step, up to NODE_SIZE_MAX."""
+        if not self.selected_nodes:
+            QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
+            return
+        for node in self.selected_nodes:
+            current = self.node_sizes.get(node, self.NODE_SIZE_DEFAULT)
+            self.node_sizes[node] = min(self.NODE_SIZE_MAX, current + self.NODE_SIZE_STEP)
+        self.redraw_graph()
+        self.build_resize_palette()
+        self.resize_menu.popup(self.resize_menu.pos())
+
+    def _resize_decrease(self):
+        """Decrease size of selected nodes by one step, down to NODE_SIZE_DEFAULT."""
+        if not self.selected_nodes:
+            QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
+            return
+        for node in self.selected_nodes:
+            current = self.node_sizes.get(node, self.NODE_SIZE_DEFAULT)
+            self.node_sizes[node] = max(self.NODE_SIZE_DEFAULT, current - self.NODE_SIZE_STEP)
+        self.redraw_graph()
+        self.build_resize_palette()
+        self.resize_menu.popup(self.resize_menu.pos())
+
     def set_family_color(self, color_value):
         """
         Set a family color for the selected edge.
-            Stores the color in edge_family_colors, updates the display,
-            and emits a graph change signal. Requires an edge to be selected.
+        Stores the RGB color in edge_family_colors, redraws, then records a
+        color-only history snapshot via add_color_history so that each individual
+        color assignment is independently undoable/redoable. Requires an edge to
+        be selected.
         """
         if not self.selected_edge:
             QMessageBox.warning(self, "No edge selected", "Select an edge first.")
@@ -1998,42 +2289,95 @@ class Graph(QObject):
         rgb = (color.redF(), color.greenF(), color.blueF())
         if not hasattr(self, "edge_family_colors"):
             self.edge_family_colors = {}
+
         edge = self.selected_edge
         self.edge_family_colors[edge] = rgb
-        # Redraw to show the family circle
+
         self.redraw_graph()
-        self.graph_changed.emit()  # Update the model
+        if hasattr(self, "_boonify_parent"):
+            self._boonify_parent.add_color_history()
+
+    def _wrap_node_label(self, label, max_length=7):
+        """
+        Wraps a node label at natural separators: _, -, /, :
+        Only wraps if the label exceeds max_length characters.
+        Each segment becomes a new line.
+            :param label: Original node label string.
+            :param max_length: Character threshold above which wrapping is applied.
+            :rtype: str
+        """
+        if len(label) <= max_length:
+            return label
+    
+        separators = {'_', '-', '/', ':'}
+    
+        lines = []
+        current = ""
+        last_break_index = -1
+    
+        for i, ch in enumerate(label):
+            current += ch
+    
+            if ch in separators:
+                last_break_index = len(current)
+    
+            # only decide to wrap if too long
+            if len(current) > max_length:
+                if last_break_index != -1:
+                    # break at last separator
+                    lines.append(current[:last_break_index])
+                    current = current[last_break_index:]
+                    last_break_index = -1
+                else:
+                    # no separator found → force break
+                    lines.append(current)
+                    current = ""
+    
+        if current:
+            lines.append(current)
+    
+        return "\n".join(lines)
 
 class Network:
     """
     Conversion layer between Graph and BooN.
-    This class handles transformation between the GUI graph representation and the BooN
-    logical model, without UI, Qt rendering, or history management responsibilities.
-
-        :ivar boon: Internal BooN logical model instance used for conversions.
-        :type boon: BooN
+    Handles transformation between GUI graph representation and BooN model.
     """
+
     def __init__(self):
         self.boon = BooN()
 
     def graph_to_boon(self, graph_editor, current_boon=None):
         """
-        Converts a GUI graph editor structure into a BooN logical model.
+        Converts GUI graph into BooN using BooN.from_ig() (correct logical semantics).
 
-        This method maps graph nodes to SymPy symbols, builds an interaction graph,
-        and generates a BooN object using library functions. It also post-processes
-        logical dependencies to correctly represent inhibitory interactions using Not().
+        Family color semantics (clause grouping):
+        -----------------------------------------
+        Edges that share the same family color AND point to the same target node
+        belong to the SAME AND-clause (same module index).  Edges with different
+        family colors (or the default white) each form their own separate clause,
+        joined by OR in the final DNF formula.
 
-            :param graph_editor: GUI graph editor containing nodes, edges, and metadata.
-            :param current_boon: Optional fallback BooN model used if conversion fails.
-            :return: Converted BooN model.
-            :rtype: BooN
+        White / BASIC_FAMILY_COLOR edges are each treated as independent clauses
+        (each gets a fresh module index even if multiple white edges hit the same
+        target).
+
+        Module sign follows edge sign exactly (from_ig convention):
+          positive sign  ->  positive module index (+k)  ->  literal = src
+          negative sign  ->  negative module index (-k)  ->  literal = Not(src)
+
+        Example (from docstring):
+          x1->x2  pink   sign+1  -> module +1
+          x3->x2  pink   sign-1  -> module -1  (same clause 1, negated literal)
+          x4->x2  yellow sign+1  -> module +2  (separate clause 2)
+          => x2 = (x1 & ~x3) | x4
         """
-        from sympy import Not, And, symbols
-    
+
+        from sympy import symbols
+
         graph = graph_editor.graph
-    
-        # 1. Build symbol mapping
+
+        # 1. Build symbol mapping: node integer ID -> sympy Symbol
         id_to_symbol = {}
         for node_id, label in graph_editor.node_labels.items():
             if isinstance(label, str):
@@ -2041,50 +2385,94 @@ class Network:
             if not label:
                 label = f"x{node_id}"
             id_to_symbol[node_id] = symbols(label)
-    
-        # 2. Build interaction graph
+
+        # 2. Assign module indices driven by family color grouping.
+        #
+        #    For each target node, gather all incoming edges with their family
+        #    color.  Non-white edges sharing the same color → same clause index.
+        #    White edges → each gets its own fresh clause index.
+        #    The final module integer is signed: +k for positive edges, -k for
+        #    negative edges (matching BooN.from_ig semantics exactly).
+
+        incoming = {}   # target_id -> list of (src_id, family_color_tuple)
+        for u, v in graph.edges():
+            if u not in id_to_symbol or v not in id_to_symbol:
+                continue
+            fc = tuple(graph_editor.edge_family_colors.get((u, v), BASIC_FAMILY_COLOR))
+            incoming.setdefault(v, []).append((u, fc))
+
+        edge_module_index = {}   # (src_id, tgt_id) -> signed int
+
+        white = tuple(BASIC_FAMILY_COLOR)
+
+        for tgt, edges_in in incoming.items():
+            color_to_clause = {}   # non-white color tuple -> clause index (unsigned)
+            next_idx = [1]         # mutable 1-based counter shared across this target
+
+            for src, fc in edges_in:
+                if fc == white:
+                    # White: always a fresh independent clause.
+                    clause_idx = next_idx[0]
+                    next_idx[0] += 1
+                else:
+                    # Normalise float rounding before using as dict key.
+                    key = tuple(round(c, 6) for c in fc)
+                    if key not in color_to_clause:
+                        color_to_clause[key] = next_idx[0]
+                        next_idx[0] += 1
+                    clause_idx = color_to_clause[key]
+
+                sign = graph[src][tgt].get("sign", 1)
+                # Positive sign -> +clause_idx  (literal = source symbol)
+                # Negative sign -> -clause_idx  (literal = Not(source symbol))
+                edge_module_index[(src, tgt)] = clause_idx if sign >= 0 else -clause_idx
+
+        # 3. Build the interaction graph with correctly signed module sets.
         ig = nx.DiGraph()
         for symbol in id_to_symbol.values():
             ig.add_node(symbol)
-    
-        for u, v in graph_editor.graph.edges():
+
+        for u, v in graph.edges():
             if u not in id_to_symbol or v not in id_to_symbol:
                 continue
+
             src_symbol = id_to_symbol[u]
             tgt_symbol = id_to_symbol[v]
             sign = graph[u][v].get("sign", 1)
-            module = graph_editor.edge_modules.get((u, v), {1})
-            label = graph_editor.edge_labels.get((u, v), "")
-            color = graph_editor.edge_colors.get((u, v), (0, 0, 0))
-            ig.add_edge(src_symbol, tgt_symbol, sign=sign, module=module, label=label, color=color)
-    
-        # 3. Build BooN using from_ig (library handles sign if supported)
+
+            # Module is a singleton set {+k} or {-k}.
+            mod_idx = edge_module_index.get((u, v), 1 if sign >= 0 else -1)
+            module = {mod_idx}
+
+            edge_label = graph_editor.edge_labels.get((u, v), "")
+            edge_color  = graph_editor.edge_colors.get((u, v), (0, 0, 0))
+
+            ig.add_edge(
+                src_symbol,
+                tgt_symbol,
+                sign=sign,
+                module=module,
+                label=edge_label,
+                color=edge_color
+            )
+
+        # 4. Let BooN.from_ig() do the logical construction (DNF from modules).
         try:
             boon = BooN.from_ig(ig)
-        except ValueError:
+
+        except Exception:
             if current_boon is not None:
                 boon = current_boon.copy()
             else:
                 boon = BooN()
-    
-        # FIX: Post-process desc to wrap negative-sign regulators in Not()
-        for tgt_symbol in list(boon.desc.keys()):
-            # Collect regulators for this target
-            regulators = []
-            for u, v, data in ig.edges(data=True):
-                if v == tgt_symbol:
-                    sign = data.get("sign", 1)
-                    regulator = u if sign == 1 else Not(u)
-                    regulators.append(regulator)
-            if regulators:
-                boon.desc[tgt_symbol] = And(*regulators)
-    
-        # 4. Store positions
+
+        # 5. Store positions ONLY (no logic manipulation here)
         boon.pos = {}
+
         for node_id, position in graph_editor.node_positions.items():
             if node_id in id_to_symbol:
                 boon.pos[id_to_symbol[node_id]] = position
-    
+
         return boon
     
     from sympy import Not
@@ -2537,6 +2925,8 @@ class Controllability(QMainWindow):
 
         #STEP : set the controllability as the function of the thread
         self.parent.worker.apply(self.controllability)
+        # display_controllability() builds Qt models and must run on the main thread.
+        self.parent.worker.finished.connect(self.display_controllability)
 
         #STEP: Initialize Destiny page
         self.Destiny.setRowCount(nbrow)
@@ -2694,6 +3084,42 @@ class Controllability(QMainWindow):
         treemodel.setHeaderData(0, Qt.Horizontal, "Variable")
         treemodel.setHeaderData(1, Qt.Horizontal, "Boolean value")
 
+        root = treemodel.invisibleRootItem()
+        match self.actions:
+            case []:  #No actions
+                item = QStandardItem("No action found.")
+                root.appendRow(item)
+            case [[]]:  #The destiny profile is already obtained
+                item = QStandardItem("The marking profile already exists.")
+                root.appendRow(item)
+            case _:  #Compute the control actions.
+                for i, actions in enumerate(self.actions, 1):
+                    #create the root solution
+                    rootactions = QStandardItem("Solution {:2d}".format(i))
+                    #add the control actions of this solution
+                    for action in actions:
+                        #a control action is displayed as: variable + Boolean icon + Boolean value
+                        variable = QStandardItem(str(action[0]))
+                        icon = QIcon(ICON01[action[1]])
+                        icon.pixmap(QSize(64, 64))
+                        value = QStandardItem(icon, str(action[1]))
+                        rootactions.appendRow([variable, value])
+                    #append the solution to the tree model
+                    root.appendRow(rootactions)
+        self.ControlActions.setModel(treemodel)  #set the data model to tree widget enabling its display.
+        self.ControlActions.expandAll()
+
+    def display_controllability(self):
+        """
+        Build the Qt tree model from self.actions and update ControlActions.
+        Connected to Threader.finished so it always runs on the main thread.
+            :return: None
+        """
+        #STEP: Define the tree model to show the resulting actions.
+        treemodel = QStandardItemModel(0, 2)  #Add 2 columns
+        treemodel.setHeaderData(0, Qt.Horizontal, "Variable")
+        treemodel.setHeaderData(1, Qt.Horizontal, "Boolean value")
+ 
         root = treemodel.invisibleRootItem()
         match self.actions:
             case []:  #No actions

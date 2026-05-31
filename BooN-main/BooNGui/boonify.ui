@@ -13,8 +13,8 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>800</width>
-    <height>800</height>
+    <width>0</width>
+    <height>0</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -70,12 +70,12 @@
         </rect>
        </property>
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Expanding" vsizetype="Ignored">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0">
+       <layout class="QVBoxLayout" name="verticalLayout_4">
         <property name="spacing">
          <number>0</number>
         </property>
@@ -92,26 +92,10 @@
          <number>5</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout" stretch="0">
-          <item>
-           <layout class="QVBoxLayout" name="DesignCanvas" stretch="">
-            <property name="spacing">
-             <number>0</number>
-            </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-           </layout>
-          </item>
+         <layout class="QVBoxLayout" name="DesignCanvas">
+          <property name="spacing">
+           <number>0</number>
+          </property>
          </layout>
         </item>
        </layout>
@@ -284,7 +268,7 @@
    <property name="maximumSize">
     <size>
      <width>70</width>
-     <height>500</height>
+     <height>450</height>
     </size>
    </property>
    <property name="windowTitle">
@@ -310,15 +294,16 @@
    </attribute>
    <addaction name="actionDelete"/>
    <addaction name="actionFamilyColor"/>
-   <addaction name="actionHideFamilyColor"/>
    <addaction name="actionRenameNode"/>
    <addaction name="separator"/>
    <addaction name="actionEdgePlus"/>
    <addaction name="actionEdgeMinus"/>
+   <addaction name="separator"/>
+   <addaction name="actionResizeNode"/>
   </widget>
   <action name="ActionOpen">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/open.svg</normaloff>:/icon/resources/open.svg</iconset>
    </property>
    <property name="text">
@@ -333,7 +318,7 @@
   </action>
   <action name="ActionSave">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/save.svg</normaloff>:/icon/resources/save.svg</iconset>
    </property>
    <property name="text">
@@ -348,7 +333,7 @@
   </action>
   <action name="ActionImport">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/import.svg</normaloff>:/icon/resources/import.svg</iconset>
    </property>
    <property name="text">
@@ -363,7 +348,7 @@
   </action>
   <action name="ActionExport">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/export.svg</normaloff>:/icon/resources/export.svg</iconset>
    </property>
    <property name="text">
@@ -378,7 +363,7 @@
   </action>
   <action name="ActionQuit">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/close.svg</normaloff>:/icon/resources/close.svg</iconset>
    </property>
    <property name="text">
@@ -387,7 +372,7 @@
   </action>
   <action name="ActionHelp">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/help.svg</normaloff>:/icon/resources/help.svg</iconset>
    </property>
    <property name="text">
@@ -396,7 +381,7 @@
   </action>
   <action name="ActionUndo">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/undo.svg</normaloff>:/icon/resources/undo.svg</iconset>
    </property>
    <property name="text">
@@ -408,7 +393,7 @@
   </action>
   <action name="ActionRedo">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/redo.svg</normaloff>:/icon/resources/redo.svg</iconset>
    </property>
    <property name="text">
@@ -420,7 +405,7 @@
   </action>
   <action name="ActionView">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/formula.svg</normaloff>:/icon/resources/formula.svg</iconset>
    </property>
    <property name="text">
@@ -432,7 +417,7 @@
   </action>
   <action name="ActionControllability">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/game.svg</normaloff>:/icon/resources/game.svg</iconset>
    </property>
    <property name="text">
@@ -447,7 +432,7 @@
   </action>
   <action name="ActionSaveAs">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/saveas.svg</normaloff>:/icon/resources/saveas.svg</iconset>
    </property>
    <property name="text">
@@ -462,7 +447,7 @@
   </action>
   <action name="ActionStableStates">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/yin-yang.svg</normaloff>:/icon/resources/yin-yang.svg</iconset>
    </property>
    <property name="text">
@@ -471,7 +456,7 @@
   </action>
   <action name="ActionModel">
    <property name="icon">
-    <iconset>
+    <iconset resource="booneries.qrc">
      <normaloff>:/icon/resources/model.svg</normaloff>:/icon/resources/model.svg</iconset>
    </property>
    <property name="text">
@@ -481,7 +466,7 @@
   <action name="actionEdgePlus">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/edge_plus_sign.svg</normaloff>../logos/edge_plus_sign.svg</iconset>
+     <normaloff>resources/edge_plus_sign.svg</normaloff>resources/edge_plus_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Edge Plus Sign</string>
@@ -490,7 +475,7 @@
   <action name="actionEdgeMinus">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/edge_minus_sign.svg</normaloff>../logos/edge_minus_sign.svg</iconset>
+     <normaloff>resources/edge_minus_sign.svg</normaloff>resources/edge_minus_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Edge Minus Sign</string>
@@ -499,7 +484,7 @@
   <action name="actionDelete">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/delete_sign.svg</normaloff>../logos/delete_sign.svg</iconset>
+     <normaloff>resources/delete_sign.svg</normaloff>resources/delete_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Delete</string>
@@ -511,7 +496,7 @@
   <action name="actionFamilyColor">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/family_color_sign.svg</normaloff>../logos/family_color_sign.svg</iconset>
+     <normaloff>resources/family_color_sign.svg</normaloff>resources/family_color_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Family Color</string>
@@ -523,7 +508,7 @@
   <action name="actionZoomIn">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/zoom_in_sign.svg</normaloff>../logos/zoom_in_sign.svg</iconset>
+     <normaloff>resources/zoom_in_sign.svg</normaloff>resources/zoom_in_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Zoom In</string>
@@ -535,7 +520,7 @@
   <action name="actionZoomOut">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/zoom_out_sign.svg</normaloff>../logos/zoom_out_sign.svg</iconset>
+     <normaloff>resources/zoom_out_sign.svg</normaloff>resources/zoom_out_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Zoom Out</string>
@@ -547,7 +532,7 @@
   <action name="actionRenameNode">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/rename_node_sign.svg</normaloff>../logos/rename_node_sign.svg</iconset>
+     <normaloff>resources/rename_node_sign.svg</normaloff>resources/rename_node_sign.svg</iconset>
    </property>
    <property name="text">
     <string>Rename Node</string>
@@ -556,16 +541,16 @@
     <string>Rename Node</string>
    </property>
   </action>
-  <action name="actionHideFamilyColor">
+  <action name="actionResizeNode">
    <property name="icon">
     <iconset>
-     <normaloff>../logos/no_family_color_sign.svg</normaloff>../logos/no_family_color_sign.svg</iconset>
+     <normaloff>resources/resize_node.svg</normaloff>resources/resize_node.svg</iconset>
    </property>
    <property name="text">
-    <string>Hide Family Color</string>
+    <string>Resize Node</string>
    </property>
    <property name="toolTip">
-    <string>Hide Family Color View</string>
+    <string>Resize Node</string>
    </property>
   </action>
  </widget>
