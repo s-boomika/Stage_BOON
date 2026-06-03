@@ -713,6 +713,9 @@ class Graph(QObject):
         self.NODE_SIZE_STEP: int = 200
         self.node_sizes: dict = {}                                                  #Per-node size overrides: stores specific sizes of nodes, uses default size if not specified
 
+        #STEP: Initialize node label position state
+        self.node_label_top: bool = False                                           #If True, labels are shifted above nodes; if False, labels are centered on nodes
+
     #DEF: Graph Model/Logic
     def setup_design(self, boon):
         """
@@ -752,6 +755,14 @@ class Graph(QObject):
             self.node_positions = {symbol_to_id[sym]: coord for sym, coord in sym_layout.items()}
         print("setup_design boon.pos:", {str(k): v for k, v in (getattr(boon, 'pos', None) or {}).items()})
         print("setup_design node_positions:", {self.node_labels.get(k, k): v for k, v in self.node_positions.items()})
+
+        #STEP: Restore per-node sizes from boon.meta if available
+        self.node_sizes = {}
+        meta = getattr(boon, "meta", None) or {}
+        saved_sizes = meta.get("node_sizes", {})
+        for node_id, label in self.node_labels.items():
+            if label in saved_sizes:
+                self.node_sizes[node_id] = saved_sizes[label]                      #Re-map from symbol string back to int node ID
 
         #STEP: Add edges to the graph, with their signs and display color
         self.edge_colors = {}
@@ -813,9 +824,9 @@ class Graph(QObject):
                     self.boon.pos[sym] = self.node_positions[node]                      #Symbol key position
         self.redraw_graph()
 
-        #STEP: Record position change in history
+        #STEP: Record position change in history (structural: boon.pos was modified)
         if hasattr(self, "_boonify_parent"):
-            self._boonify_parent.add_color_history(boon_snapshot=self.boon)
+            self._boonify_parent.add_history()
 
         print("node_positions:", {self.node_labels[n]: self.node_positions[n] for n in self.selected_nodes if n in self.node_labels})
         print("boon.pos:      ", {str(k): v for k, v in self.boon.pos.items()})
@@ -1022,11 +1033,17 @@ class Graph(QObject):
     def _draw_labels(self):
         """
         Renders node labels on the canvas, applying optional vertical offset and line wrapping.
-        LABEL_VERTICAL_OFFSET shifts all labels upward in data-space units; set to 0 for centered.
+        When node_label_top is True, LABEL_VERTICAL_OFFSET = 0.04 shifts all labels just above the node
+        center. All nodes are at default size in this mode so the fixed offset is consistent everywhere.
+        When node_label_top is False, LABEL_VERTICAL_OFFSET = 0 centers the label on the node.
         Labels containing separators are wrapped by _wrap_node_label before display.
             :return: None
         """
-        LABEL_VERTICAL_OFFSET = 0                                                       #Shift labels upward by this amount (increase: up, decrease: low, set 0: center)
+        #STEP: Choose vertical offset based on label-position mode
+        if getattr(self, "node_label_top", False):
+            LABEL_VERTICAL_OFFSET = 0.04                                                #Shift labels just above node center; nodes are at default size so offset is uniform
+        else:
+            LABEL_VERTICAL_OFFSET = 0                                                   #Center labels on nodes
 
         #STEP: Apply vertical offset to all node positions for label placement
         shifted_positions = {
@@ -1043,7 +1060,7 @@ class Graph(QObject):
         text_items = nx.draw_networkx_labels(
             self.graph,
             shifted_positions,
-            labels=wrapped_labels,   
+            labels=wrapped_labels,
             font_size=10,
             font_weight='bold',
             ax=self.canvas.axes
@@ -2299,76 +2316,222 @@ class Graph(QObject):
     def open_resize_menu(self):
         """
         Opens the node-size adjustment panel at the current mouse cursor position.
-        If no nodes are selected, shows a warning instead of opening the menu.
+        The panel can be opened even without a selection because the 'All' mode operates on every node.
+        A warning is shown only when the panel is actually used in 'Selected' mode with no node chosen.
             :return: None
         """
         if not hasattr(self, "resize_menu"):                                                       #Verify menu exists
             return
-        
-        if not self.selected_nodes:                                                                #Verify at least one node is selected
-            QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
-            return
-        
+
         #STEP: Rebuild and display the resize panel at cursor position
         self.build_resize_palette()
         self.resize_menu.popup(QCursor().pos())
 
     def build_resize_palette(self):
         """
-        Build the node-size adjustment UI inside the menu.
-        Shows an 'Adjust size' label flanked by - and + buttons, plus a status line that indicates 
-        when the minimum or maximum size has been reached for the selected node(s).
+        Build the node-size adjustment UI inside the resize menu popup.
+
+        The panel contains:
+          - A horizontal slider to set the size of the target node(s) continuously.
+          - A toggle switch (Selected / All) to apply the size to the selected node(s) or
+            uniformly to all nodes in the graph.
+          - A label-position icon button that switches the node name between Center and Top.
+            Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so
+            that the label offset is consistent across the graph.
         """
         self.resize_menu.clear()
 
         container = QWidget()
         layout = QVBoxLayout()
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(4)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(6)
 
-        #Title label
-        title_label = QLabel("Adjust size")
+        # ── Title ──────────────────────────────────────────────────────────────
+        title_label = QLabel("Node Size")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
         layout.addWidget(title_label)
 
-        #STEP: Build row with - / + buttons
-        row = QHBoxLayout()
-        row.setSpacing(6)
-
-        minus_btn = QPushButton("-")
-        minus_btn.setFixedSize(32, 32)
-        minus_btn.setStyleSheet("QPushButton { font-size: 20px; font-weight: bold; }")
-        minus_btn.clicked.connect(self._resize_decrease)                                            #Decrease selected node size
-        row.addWidget(minus_btn)
-
-        plus_btn = QPushButton("+")
-        plus_btn.setFixedSize(32, 32)
-        plus_btn.setStyleSheet("QPushButton { font-size: 20px; font-weight: bold; }")
-        plus_btn.clicked.connect(self._resize_increase)                                             #Increase selected node size
-        row.addWidget(plus_btn)
-
-        layout.addLayout(row)
-
-        #STEP: Determine size status based on selected nodes
-        status_label = QLabel("")
-        status_label.setAlignment(Qt.AlignCenter)
-
-        if not self.selected_nodes:
-            status_label.setStyleSheet("font-size: 10px; color: #888888;")                          #No node selected
+        # ── Slider ─────────────────────────────────────────────────────────────
+        #Determine the initial slider value: average size of selected (or all) nodes
+        if self.selected_nodes:
+            ref_size = int(sum(self.node_sizes.get(n, self.NODE_SIZE_DEFAULT)
+                               for n in self.selected_nodes) / len(self.selected_nodes))
         else:
-            sizes = [self.node_sizes.get(n, self.NODE_SIZE_DEFAULT) for n in self.selected_nodes]
-            if all(s <= self.NODE_SIZE_DEFAULT for s in sizes):
-                status_label.setText("Minimal size reached")                                        #Selected node size at minimal size
-                status_label.setStyleSheet("font-size: 10px; color: #CC4400; font-style: italic;")
-            elif all(s >= self.NODE_SIZE_MAX for s in sizes):
-                status_label.setText("Maximal size reached")                                        #Selected node size at maximal size
-                status_label.setStyleSheet("font-size: 10px; color: #CC4400; font-style: italic;")
-            else:
-                status_label.setStyleSheet("font-size: 10px; color: #888888;")
-        layout.addWidget(status_label)
+            ref_size = self.NODE_SIZE_DEFAULT
 
-        #STEP: Attach the container widget to the menu via a QWidgetAction
+        slider = QSlider(Qt.Horizontal)
+        slider.setMinimum(self.NODE_SIZE_DEFAULT)
+        slider.setMaximum(self.NODE_SIZE_MAX)
+        slider.setSingleStep(self.NODE_SIZE_STEP)
+        slider.setPageStep(self.NODE_SIZE_STEP)
+        slider.setValue(ref_size)
+        slider.setFixedWidth(180)
+        slider.setToolTip("Drag to adjust node size")
+
+        #Label showing the current size value next to the slider
+        size_value_label = QLabel(str(ref_size))
+        size_value_label.setFixedWidth(36)
+        size_value_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        size_value_label.setStyleSheet("font-size: 10px; color: #555555;")
+
+        #Disable slider immediately if already in Top mode (fixed offset requires default size)
+        _in_top_mode = getattr(self, "node_label_top", False)
+        slider.setEnabled(not _in_top_mode)
+        size_value_label.setEnabled(not _in_top_mode)
+
+        slider_row = QHBoxLayout()
+        slider_row.setSpacing(6)
+        slider_row.addWidget(slider)
+        slider_row.addWidget(size_value_label)
+        layout.addLayout(slider_row)
+
+        # ── Selected / All toggle ──────────────────────────────────────────────
+        toggle_row = QHBoxLayout()
+        toggle_row.setSpacing(6)
+
+        toggle_lbl = QLabel("Apply to:")
+        toggle_lbl.setStyleSheet("font-size: 10px;")
+        toggle_row.addWidget(toggle_lbl)
+
+        btn_selected = QPushButton("Selected")
+        btn_all      = QPushButton("All")
+        for btn in (btn_selected, btn_all):
+            btn.setCheckable(True)
+            btn.setFixedHeight(24)
+            btn.setStyleSheet(
+                "QPushButton { font-size: 10px; border: 1px solid #aaa; border-radius: 3px; padding: 0 6px; }"
+                "QPushButton:checked { background-color: #4A90D9; color: white; border-color: #2E6DAD; }"
+            )
+
+        #Persist the toggle state across palette rebuilds
+        _all_mode = getattr(self, "_resize_all_mode", False)
+        btn_selected.setChecked(not _all_mode)
+        btn_all.setChecked(_all_mode)
+
+        def _set_mode_selected():
+            self._resize_all_mode = False
+            btn_selected.setChecked(True)
+            btn_all.setChecked(False)
+
+        def _set_mode_all():
+            self._resize_all_mode = True
+            btn_selected.setChecked(False)
+            btn_all.setChecked(True)
+
+        btn_selected.clicked.connect(_set_mode_selected)
+        btn_all.clicked.connect(_set_mode_all)
+
+        toggle_row.addWidget(btn_selected)
+        toggle_row.addWidget(btn_all)
+        toggle_row.addStretch()
+        layout.addLayout(toggle_row)
+
+        # ── Slider value-change handler ────────────────────────────────────────
+        def _on_slider_changed(value):
+            """Apply the slider value to the target nodes and redraw."""
+            size_value_label.setText(str(value))
+            if getattr(self, "_resize_all_mode", False):
+                #Apply uniformly to every node in the graph
+                for node in self.graph.nodes():
+                    self.node_sizes[node] = value
+            else:
+                #Apply only to selected nodes; show error if none are selected
+                if not self.selected_nodes:
+                    QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
+                    return
+                for node in self.selected_nodes:
+                    self.node_sizes[node] = value
+            self.redraw_graph()
+
+        slider.valueChanged.connect(_on_slider_changed)
+
+        # ── Separator ──────────────────────────────────────────────────────────
+        sep = QFrame()
+        sep.setFrameShape(QFrame.HLine)
+        sep.setFrameShadow(QFrame.Sunken)
+        sep.setStyleSheet("color: #cccccc;")
+        layout.addWidget(sep)
+
+        # ── Label position icon button ─────────────────────────────────────────
+        label_pos_row = QHBoxLayout()
+        label_pos_row.setSpacing(8)
+
+        label_pos_title = QLabel("Label position:")
+        label_pos_title.setStyleSheet("font-size: 10px;")
+        label_pos_row.addWidget(label_pos_title)
+
+        #Determine current state and build the toggle button
+        _label_top = getattr(self, "node_label_top", False)
+
+        label_pos_btn = QPushButton()
+        label_pos_btn.setFixedSize(80, 28)
+        label_pos_btn.setCheckable(True)
+        label_pos_btn.setChecked(_label_top)
+
+        #Icon paths follow the same convention as ICON01 and family color icons
+        ICON_LABEL_CENTER = ":/icon/resources/center_name.svg"
+        ICON_LABEL_TOP    = ":/icon/resources/top_name.svg"
+
+        def _update_label_pos_btn(is_top):
+            """Refresh button icon/text and style to reflect the current label-position mode."""
+            if is_top:
+                icon = QIcon(ICON_LABEL_TOP)
+                if not icon.isNull():
+                    label_pos_btn.setIcon(icon)
+                    label_pos_btn.setIconSize(QSize(16, 16))
+                    label_pos_btn.setText(" Top")
+                else:
+                    label_pos_btn.setIcon(QIcon())
+                    label_pos_btn.setText("⬆ Top")
+                label_pos_btn.setStyleSheet(
+                    "QPushButton { font-size: 10px; border: 1px solid #aaa; border-radius: 3px; "
+                    "background-color: #4A90D9; color: white; border-color: #2E6DAD; }"
+                )
+            else:
+                icon = QIcon(ICON_LABEL_CENTER)
+                if not icon.isNull():
+                    label_pos_btn.setIcon(icon)
+                    label_pos_btn.setIconSize(QSize(16, 16))
+                    label_pos_btn.setText(" Center")
+                else:
+                    label_pos_btn.setIcon(QIcon())
+                    label_pos_btn.setText("⬤ Center")
+                label_pos_btn.setStyleSheet(
+                    "QPushButton { font-size: 10px; border: 1px solid #aaa; border-radius: 3px; "
+                    "background-color: #f0f0f0; color: #333; }"
+                )
+
+        _update_label_pos_btn(_label_top)
+
+        def _toggle_label_position(checked):
+            """
+            Switch node label position between Center and Top.
+            When switching TO Top: reset all node sizes to NODE_SIZE_DEFAULT for uniform appearance,
+            and disable the slider since the fixed offset only works at default size.
+            When switching TO Center: re-enable the slider so the user can resize freely.
+            """
+            self.node_label_top = checked
+            if checked:
+                #Reset all node sizes to default so the fixed offset is uniform across all nodes
+                self.node_sizes.clear()
+                slider.setValue(self.NODE_SIZE_DEFAULT)
+            slider.setEnabled(not checked)
+            size_value_label.setEnabled(not checked)
+            _update_label_pos_btn(checked)
+            self.redraw_graph()
+
+        label_pos_btn.toggled.connect(_toggle_label_position)
+        label_pos_row.addWidget(label_pos_btn)
+        label_pos_row.addStretch()
+        layout.addLayout(label_pos_row)
+
+        hint = QLabel("(Top resets all sizes to default)")
+        hint.setStyleSheet("font-size: 9px; color: #999999; font-style: italic;")
+        hint.setAlignment(Qt.AlignCenter)
+        layout.addWidget(hint)
+
+        # ── Attach container to menu ───────────────────────────────────────────
         container.setLayout(layout)
         widget_action = QWidgetAction(self.resize_menu)
         widget_action.setDefaultWidget(container)
@@ -2377,14 +2540,14 @@ class Graph(QObject):
     def _resize_increase(self):
         """
         Increases the display size of all currently selected nodes by one step.
-        Node sizes cannot exceed NODE_SIZE_MAX. 
+        Node sizes cannot exceed NODE_SIZE_MAX.
         Redraws the graph and refreshes the resize palette to reflect the updated state.
             :return: None
         """
-        if not self.selected_nodes:                                                                 #Show error: if no node selected
+        if not self.selected_nodes:
             QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
             return
-        
+
         #STEP: Increment each selected node's size, capped at NODE_SIZE_MAX
         for node in self.selected_nodes:
             current = self.node_sizes.get(node, self.NODE_SIZE_DEFAULT)
@@ -2397,15 +2560,15 @@ class Graph(QObject):
     def _resize_decrease(self):
         """
         Decreases the display size of all currently selected nodes by one step.
-        Size is floored at ``NODE_SIZE_DEFAULT``. 
+        Size is floored at NODE_SIZE_DEFAULT.
         Redraws the graph and refreshes the resize palette to reflect the updated state.
             :return: None
         """
-        if not self.selected_nodes:                                                                 #Show error: if no node selected
+        if not self.selected_nodes:
             QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
             return
-        
-        #STEP: Decrement each selected node's size, floored at NODE_SIZE_MAX
+
+        #STEP: Decrement each selected node's size, floored at NODE_SIZE_DEFAULT
         for node in self.selected_nodes:
             current = self.node_sizes.get(node, self.NODE_SIZE_DEFAULT)
             self.node_sizes[node] = max(self.NODE_SIZE_DEFAULT, current - self.NODE_SIZE_STEP)
@@ -2590,6 +2753,16 @@ class Network:
         for node_id, position in graph_editor.node_positions.items():
             if node_id in id_to_symbol:
                 boon.pos[id_to_symbol[node_id]] = position                                      #Map symbol to its canvas position
+
+        #STEP: Serialize node_sizes into boon.meta so they are saved with the file
+        if not hasattr(boon, "meta") or boon.meta is None:
+            boon.meta = {}
+        node_sizes_by_symbol = {}
+        for node_id, size in graph_editor.node_sizes.items():
+            if node_id in id_to_symbol:
+                node_sizes_by_symbol[str(id_to_symbol[node_id])] = size                        #Store under string key for JSON-safe serialization
+        boon.meta["node_sizes"] = node_sizes_by_symbol
+
         return boon
     
     def boon_to_graph(self, boon, graph_editor):

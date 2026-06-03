@@ -2,6 +2,7 @@
   <qresource prefix="icon">
     <file>resources/act.svg</file>
     <file>resources/asynchronous.svg</file>
+    <file>resources/center_name.svg</file>
     <file>resources/close.svg</file>
     <file>resources/delete_sign.svg</file>
     <file>resources/dnf.svg</file>
@@ -30,6 +31,7 @@
     <file>resources/save.svg</file>
     <file>resources/saveas.svg</file>
     <file>resources/synchronous.svg</file>
+    <file>resources/top_name.svg</file>
     <file>resources/true.svg</file>
     <file>resources/undo.svg</file>
     <file>resources/yin-yang.svg</file>
