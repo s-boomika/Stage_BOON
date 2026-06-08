@@ -685,7 +685,7 @@ The method is a class method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boon.BooN.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'BooN07-juin-26-12.boon'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/boon.html#BooN.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boon.BooN.save" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'BooN07-juin-26-15.boon'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/boon.html#BooN.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boon.BooN.save" title="Link to this definition"></a></dt>
 <dd><p>Save the Boolean Network to file.
 If the extension is freestates, then .boon is added.</p>
 <dl class="field-list simple">
@@ -1132,100 +1132,27 @@ TEITSIN constant prefixes the additional variables.</p>
 Provides a GUI with a comprehensive set of functionalities. This class is primarily responsible for initializing
 and connecting GUI widgets, setting up callbacks, and constructing an editable graph
 for network interaction design.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar boon<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The current Boolean Network object being managed or displayed.</p>
-</dd>
-<dt class="field-even">type boon<span class="colon">:</span></dt>
-<dd class="field-even"><p>BooN</p>
-</dd>
-<dt class="field-odd">ivar filename<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The name of the file associated with the current BooN (empty if no file is loaded or saved).</p>
-</dd>
-<dt class="field-even">type filename<span class="colon">:</span></dt>
-<dd class="field-even"><p>str</p>
-</dd>
-<dt class="field-odd">ivar history<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Maintains a history list of BooN objects for undo/redo functionalities.</p>
-</dd>
-<dt class="field-even">type history<span class="colon">:</span></dt>
-<dd class="field-even"><p>list</p>
-</dd>
-<dt class="field-odd">ivar hindex<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The index of the last BooN added to the history.</p>
-</dd>
-<dt class="field-even">type hindex<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">ivar hupdate<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Flag indicating whether the history should be updated.</p>
-</dd>
-<dt class="field-even">type hupdate<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-<dt class="field-odd">ivar saved<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Flag indicating if the current BooN has been saved.</p>
-</dd>
-<dt class="field-even">type saved<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-<dt class="field-odd">ivar QView<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Widget for displaying BooN visualization.</p>
-</dd>
-<dt class="field-even">type QView<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget | None</p>
-</dd>
-<dt class="field-odd">ivar QStableStates<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Widget for displaying stable states of BooNs.</p>
-</dd>
-<dt class="field-even">type QStableStates<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget | None</p>
-</dd>
-<dt class="field-odd">ivar QModel<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Widget for displaying the dynamic model of the BooN.</p>
-</dd>
-<dt class="field-even">type QModel<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget | None</p>
-</dd>
-<dt class="field-odd">ivar QControllability<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Widget for displaying BooN controllability analysis.</p>
-</dd>
-<dt class="field-even">type QControllability<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget | None</p>
-</dd>
-<dt class="field-odd">ivar editgraph<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Editable graphical representation of the BooN’s interaction graph.</p>
-</dd>
-<dt class="field-even">type editgraph<span class="colon">:</span></dt>
-<dd class="field-even"><p>EditableGraph | None</p>
-</dd>
-<dt class="field-odd">ivar disablecallback<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Flag indicating whether design callbacks are disabled.</p>
-</dd>
-<dt class="field-even">type disablecallback<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-<dt class="field-odd">ivar designsize<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Scaling factor related to graphics elements in the EditableGraph.</p>
-</dd>
-<dt class="field-even">type designsize<span class="colon">:</span></dt>
-<dd class="field-even"><p>float</p>
-</dd>
-<dt class="field-odd">ivar worker<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Background thread for processing long-running BooN operations.</p>
-</dd>
-<dt class="field-even">type worker<span class="colon">:</span></dt>
-<dd class="field-even"><p>Threader</p>
-</dd>
-<dt class="field-odd">ivar canvas<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Matplotlib canvas for rendering the network design figure in the GUI.</p>
-</dd>
-<dt class="field-even">type canvas<span class="colon">:</span></dt>
-<dd class="field-even"><p>FigureCanvas</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>boon</strong> – The current Boolean Network object being managed or displayed.</p></li>
+<li><p><strong>filename</strong> – The name of the file associated with the current BooN (empty if no file is loaded or saved).</p></li>
+<li><p><strong>history</strong> – Maintains a history list of BooN objects for undo/redo functionalities.</p></li>
+<li><p><strong>hindex</strong> – The index of the last BooN added to the history.</p></li>
+<li><p><strong>hupdate</strong> – Flag indicating whether the history should be updated.</p></li>
+<li><p><strong>saved</strong> – Flag indicating if the current BooN has been saved.</p></li>
+<li><p><strong>QView</strong> – Widget for displaying BooN visualization.</p></li>
+<li><p><strong>QStableStates</strong> – Widget for displaying stable states of BooNs.</p></li>
+<li><p><strong>QModel</strong> – Widget for displaying the dynamic model of the BooN.</p></li>
+<li><p><strong>QControllability</strong> – Widget for displaying BooN controllability analysis.</p></li>
+<li><p><strong>editgraph</strong> – Editable graphical representation of the BooN’s interaction graph.</p></li>
+<li><p><strong>disablecallback</strong> – Flag indicating whether design callbacks are disabled.</p></li>
+<li><p><strong>designsize</strong> – Scaling factor related to graphics elements in the EditableGraph.</p></li>
+<li><p><strong>worker</strong> – Background thread for processing long-running BooN operations.</p></li>
+<li><p><strong>canvas</strong> – Matplotlib canvas for rendering the network design figure in the GUI.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Boonify.add_color_history">
 <span class="sig-name descname"><span class="pre">add_color_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boon_snapshot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.add_color_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.add_color_history" title="Link to this definition"></a></dt>
@@ -1233,8 +1160,12 @@ for network interaction design.</p>
 Called by set_edge_color_from_palette and set_family_color after updating edge_family_colors, 
 when the BooN descriptor itself has not changed.
 A new slot is created only if the color dict actually differs from the last recorded snapshot,
-so selecting the same color twice produces only one history entry.
-:return: None</p>
+so selecting the same color twice produces only one history entry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1262,18 +1193,27 @@ Color-only changes do NOT create a new entry here: use add_color_history() for t
 <dd><p>Handles the close event for the application window.
 This method ensures that when the application’s close event is triggered, it invokes the quit method to handle 
 quitting properly. The <cite>event.ignore()</cite> ensures that the close event is ignored unless the application is closed 
-successfully prior to that, in which case <cite>event.ignore()</cite> will not execute.
-:param event: The Qt close event triggered when the user closes the window.
-:type event: QCloseEvent
-:return: None</p>
+successfully prior to that, in which case <cite>event.ignore()</cite> will not execute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<em>QCloseEvent</em>) – The Qt close event triggered when the user closes the window.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Boonify.controllability">
 <span class="sig-name descname"><span class="pre">controllability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.controllability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.controllability" title="Link to this definition"></a></dt>
 <dd><p>Opens the Controllability window, which computes control actions to drive the BooN toward a target marking profile.
-The instance is stored in self.QControllability so that refresh() can update it while it is open.
-:return: None</p>
+The instance is stored in self.QControllability so that refresh() can update it while it is open.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1281,10 +1221,15 @@ The instance is stored in self.QControllability so that refresh() can update it 
 <span class="sig-name descname"><span class="pre">display_saved_flag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.display_saved_flag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.display_saved_flag" title="Link to this definition"></a></dt>
 <dd><p>Displays a flag in the status bar indicating whether the data has been saved. 
 A large empty circle (○) means the BooN is saved; a large filled circle (⬤) means it has unsaved changes. 
-Also updates self.saved so that quit() can check the state consistently.
-:param val: True if the BooN is saved, False if it has unsaved changes. Defaults to True.
-:type val: bool
-:return: None</p>
+Also updates self.saved so that quit() can check the state consistently.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val</strong> (<em>bool</em>) – True if the BooN is saved, False if it has unsaved changes. Defaults to True.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1292,16 +1237,26 @@ Also updates self.saved so that quit() can check the state consistently.
 <span class="sig-name descname"><span class="pre">exportation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.exportation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.exportation" title="Link to this definition"></a></dt>
 <dd><p>Exports the current BooN to an external file format via a Save dialog.
 Supported formats are BoolNet (.bnet) and Python/SymPy (.txt). 
-The export format is determined automatically from the chosen file extension.
-:raises ValueError: If the filename extension is unsupported or invalid.
-:return: None</p>
+The export format is determined automatically from the chosen file extension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the filename extension is unsupported or invalid.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Boonify.help">
 <span class="sig-name descname"><span class="pre">help</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.help"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.help" title="Link to this definition"></a></dt>
-<dd><p>Provides functionality to call and display help using an external Help object.
-:return: None</p>
+<dd><p>Provides functionality to call and display help using an external Help object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1309,10 +1264,12 @@ The export format is determined automatically from the chosen file extension.
 <span class="sig-name descname"><span class="pre">history_raz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.history_raz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.history_raz" title="Link to this definition"></a></dt>
 <dd><p>Resets both BooN history and color history, then records the current state as the first entry.
 Called after loading or importing a file to start a fresh undo/redo stack from the new state.
-:ivar history: BooN snapshot list, size HSIZE.
-:ivar color_history: edge_family_colors snapshot list, size HSIZE (parallel to history).
-:ivar hindex: Current position in both history lists.
-:ivar hupdate: Flag indicating whether a new entry was recorded, set to False after reset.</p>
+Resets <code class="docutils literal notranslate"><span class="pre">history</span></code>, <code class="docutils literal notranslate"><span class="pre">color_history</span></code>, <code class="docutils literal notranslate"><span class="pre">hindex</span></code>, and <code class="docutils literal notranslate"><span class="pre">hupdate</span></code> to their initial values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1321,8 +1278,12 @@ Called after loading or importing a file to start a fresh undo/redo stack from t
 <dd><p>Imports a BooN from an external file format and updates the application state.
 Supported formats are BoolNet (.bnet), Python/SymPy (.txt), and SBML (.sbml, .xml).
 After a successful import, self.filename is set to None because the BooN is not stored in the native .boon format. 
-All open views are refreshed and the history is reset. An error dialog is shown if the file extension isn’t recognised.
-:return: None</p>
+All open views are refreshed and the history is reset. An error dialog is shown if the file extension isn’t recognised.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1330,8 +1291,12 @@ All open views are refreshed and the history is reset. An error dialog is shown 
 <span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.model" title="Link to this definition"></a></dt>
 <dd><p>Opens the Dynamical Model window, which draws the state-transition graph of the current BooN.
 Refused if the number of variables exceeds MODELBOUND, since the state space grows as 2^n
-and the graph would be too large to render.
-:return: None</p>
+and the graph would be too large to render.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1339,8 +1304,12 @@ and the graph would be too large to render.
 <span class="sig-name descname"><span class="pre">on_graph_changed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.on_graph_changed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.on_graph_changed" title="Link to this definition"></a></dt>
 <dd><p>Update the BooN model after a graph editor modification.</p>
 <p>Converts the current graph representation into a BooN object, records the change in the history,
-and refreshes all open views.
-:return: None</p>
+and refreshes all open views.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1348,8 +1317,12 @@ and refreshes all open views.
 <span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.open" title="Link to this definition"></a></dt>
 <dd><p>Opens a file using a file dialog, loads its contents, and updates the application state.
 Presents a file dialog filtered to .boon files. After a successful selection, loads the BooN,
-refreshes all open views, reinitializes the graph editor, and resets the undo/redo history.
-:return: None</p>
+refreshes all open views, reinitializes the graph editor, and resets the undo/redo history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1357,8 +1330,12 @@ refreshes all open views, reinitializes the graph editor, and resets the undo/re
 <span class="sig-name descname"><span class="pre">quit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.quit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.quit" title="Link to this definition"></a></dt>
 <dd><p>Terminates the application, prompting the user to save if there are unsaved changes.
 If the BooN is already saved, the application exits immediately. Otherwise a dialog
-offers three choices: Save then quit, Quit without saving, or Cancel.
-:return: None</p>
+offers three choices: Save then quit, Quit without saving, or Cancel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1367,8 +1344,12 @@ offers three choices: Save then quit, Quit without saving, or Cancel.
 <dd><p>Restores the next BooN and edge family colors from the parallel history stacks.
 Moves the history cursor one step forward. Edge colors are restored before setup_design
 so the graph redraw immediately uses the correct color state.
-Does nothing if the next slot is empty (i.e. the top of history is reached).
-:return: None</p>
+Does nothing if the next slot is empty (i.e. the top of history is reached).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1376,8 +1357,12 @@ Does nothing if the next slot is empty (i.e. the top of history is reached).
 <span class="sig-name descname"><span class="pre">refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.refresh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.refresh" title="Link to this definition"></a></dt>
 <dd><p>Refreshes all visible components, such as BooN View, Stable States View, Model View, and Controllability
 View. Each visible component is reinitialized or updated via its relevant function. This ensures that 
-all active components reflect the most current state.
-:return: None</p>
+all active components reflect the most current state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1385,8 +1370,12 @@ all active components reflect the most current state.
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.save" title="Link to this definition"></a></dt>
 <dd><p>Saves the current BooN to the existing file, or delegates to saveas() if no file is set.
 If self.filename is already defined, the BooN is saved in place and the saved-state indicator is updated. 
-If no filename exists yet (e.g. new unsaved network), the Save As dialog is opened.
-:return: None</p>
+If no filename exists yet (e.g. new unsaved network), the Save As dialog is opened.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1394,16 +1383,24 @@ If no filename exists yet (e.g. new unsaved network), the Save As dialog is open
 <span class="sig-name descname"><span class="pre">saveas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.saveas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.saveas" title="Link to this definition"></a></dt>
 <dd><p>Opens a Save As dialog and saves the current BooN to the chosen file.
 Updates self.filename with the selected path and refreshes the saved-state indicator.
-Does nothing if the dialog is cancelled.
-:return: None</p>
+Does nothing if the dialog is cancelled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Boonify.setup_callbacks">
 <span class="sig-name descname"><span class="pre">setup_callbacks</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.setup_callbacks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.setup_callbacks" title="Link to this definition"></a></dt>
 <dd><p>Connect internal application signals to their corresponding handlers.
-If the graph editor has already been created, connect its <cite>graph_changed</cite> signal to the synchronization callback.
-:return: None</p>
+If the graph editor has already been created, connect its <cite>graph_changed</cite> signal to the synchronization callback.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1412,16 +1409,24 @@ If the graph editor has already been created, connect its <cite>graph_changed</c
 <dd><p>Displays the entire history of changes, showing each entry formatted according to its identifier 
 and rendering logic using a tabulated structure. The current history index is highlighted, and 
 associated data details are presented using a plain tabular format. If a history entry lacks data,
-it displays a placeholder.
-:return: None</p>
+it displays a placeholder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Boonify.stablestates">
 <span class="sig-name descname"><span class="pre">stablestates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.stablestates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.stablestates" title="Link to this definition"></a></dt>
 <dd><p>Opens the Stable States window, which computes and displays the stable states of the current BooN.
-The instance is stored in self.QStableStates so that refresh() can update it while it is open.
-:return: None</p>
+The instance is stored in self.QStableStates so that refresh() can update it while it is open.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1429,16 +1434,24 @@ The instance is stored in self.QStableStates so that refresh() can update it whi
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.undo" title="Link to this definition"></a></dt>
 <dd><p>Restores the previous BooN and edge family colors from the parallel history stacks.
 Moves the history cursor one step back. Edge colors are restored before setup_design so the graph redraw 
-immediately uses the correct color state. Does nothing if the previous slot is empty (ex: beginning of history).
-:return: None</p>
+immediately uses the correct color state. Does nothing if the previous slot is empty (ex: beginning of history).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Boonify.view">
 <span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Boonify.view"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Boonify.view" title="Link to this definition"></a></dt>
 <dd><p>Opens the BooN View window, which displays the Boolean equations of the current network.
-The instance is stored in self.QView so that refresh() can update it while it is open.
-:return: None</p>
+The instance is stored in self.QView so that refresh() can update it while it is open.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -1450,54 +1463,19 @@ The instance is stored in self.QView so that refresh() can update it while it is
 This class is responsible for initializing the controllability user interface, handling the interactions 
 between destiny and observers tables, computing control actions based on user selections, and managing the 
 graphical representation of these actions.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar parent<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Parent window instance for the controllability widget.</p>
-</dd>
-<dt class="field-even">type parent<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget</p>
-</dd>
-<dt class="field-odd">ivar actions<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Stores the calculated control actions, if any.</p>
-</dd>
-<dt class="field-even">type actions<span class="colon">:</span></dt>
-<dd class="field-even"><p>list or None</p>
-</dd>
-<dt class="field-odd">ivar row<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Index of the currently selected solution in control actions, if applicable.</p>
-</dd>
-<dt class="field-even">type row<span class="colon">:</span></dt>
-<dd class="field-even"><p>int or None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – Parent window instance for the controllability widget.</p></li>
+<li><p><strong>actions</strong> – Stores the calculated control actions, if any.</p></li>
+<li><p><strong>row</strong> – Index of the currently selected solution in control actions, if applicable.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Controllability.actupon">
 <span class="sig-name descname"><span class="pre">actupon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.actupon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.actupon" title="Link to this definition"></a></dt>
-<dd><p>Apply the selection actions on the BooN.
-:return: None</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="boonify.Controllability.controllability">
-<span class="sig-name descname"><span class="pre">controllability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.controllability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.controllability" title="Link to this definition"></a></dt>
-<dd><p>The method calculates control actions required to achieve or avoid a defined goal (or state) in a system represented 
-by the BooN model. The method determines the applicable control actions by analyzing a user-specified query defining 
-the desired or undesired state, along with the possible variables that can be controlled. This process involves 
-interpreting various parameters such as observer states, query types, and logical modalities.
-:return: None</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="boonify.Controllability.destiny_to_observers">
-<span class="sig-name descname"><span class="pre">destiny_to_observers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.destiny_to_observers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.destiny_to_observers" title="Link to this definition"></a></dt>
-<dd><p>Updates the check state of an item in the <cite>Observers</cite> table based on the provided label and the currently 
-selected row in the <cite>Destiny</cite> table.
-:param label: A string indicating the check state condition.</p>
-<blockquote>
-<div><p>If the label is <cite>“None”</cite>, the item is unchecked; otherwise, it is checked.</p>
-</div></blockquote>
+<dd><p>Apply the selection actions on the BooN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -1506,35 +1484,81 @@ selected row in the <cite>Destiny</cite> table.
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="boonify.Controllability.controllability">
+<span class="sig-name descname"><span class="pre">controllability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.controllability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.controllability" title="Link to this definition"></a></dt>
+<dd><p>The method calculates control actions required to achieve or avoid a defined goal (or state) in a system represented 
+by the BooN model. The method determines the applicable control actions by analyzing a user-specified query defining 
+the desired or undesired state, along with the possible variables that can be controlled. This process involves 
+interpreting various parameters such as observer states, query types, and logical modalities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="boonify.Controllability.destiny_to_observers">
+<span class="sig-name descname"><span class="pre">destiny_to_observers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.destiny_to_observers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.destiny_to_observers" title="Link to this definition"></a></dt>
+<dd><p>Updates the check state of an item in the <cite>Observers</cite> table based on the provided label and the currently
+selected row in the <cite>Destiny</cite> table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>label</strong> (<em>str</em>) – If “None”, the item is unchecked; otherwise it is checked.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="boonify.Controllability.display_controllability">
 <span class="sig-name descname"><span class="pre">display_controllability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.display_controllability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.display_controllability" title="Link to this definition"></a></dt>
 <dd><p>Build the Qt tree model from self.actions and update ControlActions.
-Connected to Threader.finished so it always runs on the main thread.
-:return: None</p>
+Connected to Threader.finished so it always runs on the main thread.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Controllability.initialize_controllability">
 <span class="sig-name descname"><span class="pre">initialize_controllability</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.initialize_controllability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.initialize_controllability" title="Link to this definition"></a></dt>
-<dd><p>Initialize the controllability setup for the application.
-:return: None</p>
+<dd><p>Initialize the controllability setup for the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Controllability.observers_to_destiny">
 <span class="sig-name descname"><span class="pre">observers_to_destiny</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chkitem</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.observers_to_destiny"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.observers_to_destiny" title="Link to this definition"></a></dt>
 <dd><p>Synchronizes the Destiny table when an observer checkbox is unchecked.
-When a variable is unchecked in the Observers table, its corresponding entry in the Destiny table is reset to “None”.
-:param chkitem: The table item whose check state changed.
-:type chkitem: QTableWidgetItem
-:return: None</p>
+When a variable is unchecked in the Observers table, its corresponding entry in the Destiny table is reset to “None”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>chkitem</strong> (<em>QTableWidgetItem</em>) – The table item whose check state changed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Controllability.select_action">
 <span class="sig-name descname"><span class="pre">select_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Controllability.select_action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Controllability.select_action" title="Link to this definition"></a></dt>
-<dd><p>Keep the selection solution
-:return: None</p>
+<dd><p>Keep the selection solution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -1546,130 +1570,32 @@ When a variable is unchecked in the Observers table, its corresponding entry in 
 a Matplotlib canvas embedded in the PyQt5 GUI.
 Handles node/edge creation, deletion, renaming, selection, dragging, zooming, edge sign toggling, 
 family color assignment, and self-loop rendering.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar canvas<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The Matplotlib canvas used for rendering the graph.</p>
-</dd>
-<dt class="field-even">type canvas<span class="colon">:</span></dt>
-<dd class="field-even"><p>FigureCanvas</p>
-</dd>
-<dt class="field-odd">ivar axes<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The Matplotlib axes used for drawing.</p>
-</dd>
-<dt class="field-even">type axes<span class="colon">:</span></dt>
-<dd class="field-even"><p>matplotlib.axes.Axes</p>
-</dd>
-<dt class="field-odd">ivar graph<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The directed graph storing nodes and edges.</p>
-</dd>
-<dt class="field-even">type graph<span class="colon">:</span></dt>
-<dd class="field-even"><p>networkx.DiGraph</p>
-</dd>
-<dt class="field-odd">ivar node_positions<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dictionary mapping node IDs to (x, y) coordinates.</p>
-</dd>
-<dt class="field-even">type node_positions<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">ivar node_labels<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dictionary mapping node IDs to their display labels.</p>
-</dd>
-<dt class="field-even">type node_labels<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">ivar next_node_id<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Counter for assigning unique integer IDs to new nodes.</p>
-</dd>
-<dt class="field-even">type next_node_id<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">ivar edge_colors<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Mapping from edge (u, v) to RGB display color.</p>
-</dd>
-<dt class="field-even">type edge_colors<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">ivar edge_labels<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Mapping from edge (u, v) to its display label.</p>
-</dd>
-<dt class="field-even">type edge_labels<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">ivar edge_modules<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Mapping from edge (u, v) to its BooN module set.</p>
-</dd>
-<dt class="field-even">type edge_modules<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">ivar default_edge_sign<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Default sign for newly created edges (+1 or -1).</p>
-</dd>
-<dt class="field-even">type default_edge_sign<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">ivar selected_nodes<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Set of currently selected node IDs.</p>
-</dd>
-<dt class="field-even">type selected_nodes<span class="colon">:</span></dt>
-<dd class="field-even"><p>set</p>
-</dd>
-<dt class="field-odd">ivar selected_edge<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Currently selected edge as (src, tgt), or None.</p>
-</dd>
-<dt class="field-even">type selected_edge<span class="colon">:</span></dt>
-<dd class="field-even"><p>tuple or None</p>
-</dd>
-<dt class="field-odd">ivar zoom_factor<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Current zoom level multiplier.</p>
-</dd>
-<dt class="field-even">type zoom_factor<span class="colon">:</span></dt>
-<dd class="field-even"><p>float</p>
-</dd>
-<dt class="field-odd">ivar edge_family_colors<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Mapping from edge (u, v) to its family RGB color.</p>
-</dd>
-<dt class="field-even">type edge_family_colors<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-<dt class="field-odd">ivar show_family_colors<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Whether to render family color markers on edges.</p>
-</dd>
-<dt class="field-even">type show_family_colors<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-<dt class="field-odd">ivar graph_changed<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Qt signal emitted whenever the graph topology changes.</p>
-</dd>
-<dt class="field-even">type graph_changed<span class="colon">:</span></dt>
-<dd class="field-even"><p>pyqtSignal</p>
-</dd>
-<dt class="field-odd">ivar NODE_SIZE_DEFAULT<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Default (and minimum) node size in Matplotlib units.</p>
-</dd>
-<dt class="field-even">type NODE_SIZE_DEFAULT<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">ivar NODE_SIZE_MAX<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Maximum allowed node size.</p>
-</dd>
-<dt class="field-even">type NODE_SIZE_MAX<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">ivar NODE_SIZE_STEP<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Size increment/decrement step.</p>
-</dd>
-<dt class="field-even">type NODE_SIZE_STEP<span class="colon">:</span></dt>
-<dd class="field-even"><p>int</p>
-</dd>
-<dt class="field-odd">ivar node_sizes<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Per-node size overrides; absent key falls back to NODE_SIZE_DEFAULT.</p>
-</dd>
-<dt class="field-even">type node_sizes<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>canvas</strong> – The Matplotlib canvas used for rendering the graph.</p></li>
+<li><p><strong>axes</strong> – The Matplotlib axes used for drawing.</p></li>
+<li><p><strong>graph</strong> – The directed graph storing nodes and edges.</p></li>
+<li><p><strong>node_positions</strong> – Dictionary mapping node IDs to (x, y) coordinates.</p></li>
+<li><p><strong>node_labels</strong> – Dictionary mapping node IDs to their display labels.</p></li>
+<li><p><strong>next_node_id</strong> – Counter for assigning unique integer IDs to new nodes.</p></li>
+<li><p><strong>edge_colors</strong> – Mapping from edge (u, v) to RGB display color.</p></li>
+<li><p><strong>edge_labels</strong> – Mapping from edge (u, v) to its display label.</p></li>
+<li><p><strong>edge_modules</strong> – Mapping from edge (u, v) to its BooN module set.</p></li>
+<li><p><strong>default_edge_sign</strong> – Default sign for newly created edges (+1 or -1).</p></li>
+<li><p><strong>selected_nodes</strong> – Set of currently selected node IDs.</p></li>
+<li><p><strong>selected_edge</strong> – Currently selected edge as (src, tgt), or None.</p></li>
+<li><p><strong>zoom_factor</strong> – Current zoom level multiplier.</p></li>
+<li><p><strong>edge_family_colors</strong> – Mapping from edge (u, v) to its family RGB color.</p></li>
+<li><p><strong>show_family_colors</strong> – Whether to render family color markers on edges.</p></li>
+<li><p><strong>graph_changed</strong> – Qt signal emitted whenever the graph topology changes.</p></li>
+<li><p><strong>NODE_SIZE_DEFAULT</strong> – Default (and minimum) node size in Matplotlib units.</p></li>
+<li><p><strong>NODE_SIZE_MAX</strong> – Maximum allowed node size.</p></li>
+<li><p><strong>NODE_SIZE_STEP</strong> – Size increment/decrement step.</p></li>
+<li><p><strong>node_sizes</strong> – Per-node size overrides; absent key falls back to NODE_SIZE_DEFAULT.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Graph.build_color_palette">
 <span class="sig-name descname"><span class="pre">build_color_palette</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.build_color_palette"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.build_color_palette" title="Link to this definition"></a></dt>
@@ -1679,21 +1605,27 @@ family color assignment, and self-loop rendering.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Graph.build_resize_palette">
 <span class="sig-name descname"><span class="pre">build_resize_palette</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.build_resize_palette"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.build_resize_palette" title="Link to this definition"></a></dt>
-<dd><p>Build the node-size adjustment UI inside the resize menu popup.
-The panel contains:</p>
-<blockquote>
-<div><ul class="simple">
+<dd><dl>
+<dt>Build the node-size adjustment UI inside the resize menu popup.</dt><dd><p>The panel contains:</p>
+<ul class="simple">
 <li><p>A horizontal slider to set the size of the target node(s) continuously.</p></li>
-<li><p>A toggle switch (Selected / All) to apply the size to the selected node(s) or
-uniformly to all nodes in the graph.</p></li>
-<li><p>A label-position icon button that switches the node name between Center and Top.
-Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so
-that the label offset is consistent across the graph.</p></li>
+<li><dl class="simple">
+<dt>A toggle switch (Selected / All) to apply the size to the selected node(s) or</dt><dd><p>uniformly to all nodes in the graph.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>A label-position icon button that switches the node name between Center and Top.</dt><dd><p>Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so
+that the label offset is consistent across the graph.</p>
+</dd>
+</dl>
+</li>
 </ul>
-</div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dt class="field-odd">return<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -1703,11 +1635,18 @@ that the label offset is consistent across the graph.</p></li>
 <span class="sig-name descname"><span class="pre">change_edge_sign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.change_edge_sign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.change_edge_sign" title="Link to this definition"></a></dt>
 <dd><p>Changes the sign and display color of the currently selected edge.
 Updates both the logical sign stored in the graph and the visual color mapping, then emits a graph 
-update (graph_changed) signal after modification to notify the BooN model.
-:param sign: New sign value for the edge(+1 for activation, -1 for inhibition).
-:type sign: int
-:raises QMessageBox.warning: If no edge is currently selected.
-:return: None</p>
+update (graph_changed) signal after modification to notify the BooN model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sign</strong> (<em>int</em>) – New sign value for the edge(+1 for activation, -1 for inhibition).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>QMessageBox.warning</strong> – If no edge is currently selected.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1715,13 +1654,11 @@ update (graph_changed) signal after modification to notify the BooN model.
 <span class="sig-name descname"><span class="pre">delete_selection</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.delete_selection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.delete_selection" title="Link to this definition"></a></dt>
 <dd><p>Deletes the currently selected nodes or edge from the graph.
 Priority:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>If nodes are selected, removes them and all their connected edges.</p></li>
 <li><p>If only an edge is selected, removes that edge.</p></li>
 <li><p>If nothing is selected, displays a warning dialog.</p></li>
 </ul>
-</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -1734,10 +1671,16 @@ Priority:</p>
 <span class="sig-name descname"><span class="pre">next_default_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.next_default_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.next_default_label" title="Link to this definition"></a></dt>
 <dd><p>Generates the next available default node label.
 Only labels matching the pattern “x&lt;number&gt;” are considered. Custom renamed nodes are 
-ignored when computing the next index.
-:return: Next generated label (e.g., “x3”).
-:rtype: str
-Example:</p>
+ignored when computing the next index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Next generated label (e.g., “x3”).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+<p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">-&gt;</span> <span class="n">x3</span>
 <span class="n">tom</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span> <span class="o">-&gt;</span> <span class="n">x4</span>
 </pre></div>
@@ -1749,13 +1692,11 @@ Example:</p>
 <span class="sig-name descname"><span class="pre">on_canvas_motion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.on_canvas_motion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.on_canvas_motion" title="Link to this definition"></a></dt>
 <dd><p>Handles mouse motion events on the canvas.
 Priority order:</p>
-<blockquote>
-<div><ol class="arabic simple">
+<ol class="arabic simple">
 <li><p>Edge preview: if an edge source is set, draws a dashed preview line.</p></li>
 <li><p>Selection rectangle: if dragging on empty space, draws a dashed rectangle.</p></li>
 <li><p>Node dragging: if nodes are selected and being dragged, updates their positions.</p></li>
 </ol>
-</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>event</strong> (<em>matplotlib.backend_bases.MouseEvent</em>) – The Matplotlib mouse event carrying position data.</p>
@@ -1795,17 +1736,20 @@ Priority order:</p>
 <span class="sig-name descname"><span class="pre">on_canvas_release</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.on_canvas_release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.on_canvas_release" title="Link to this definition"></a></dt>
 <dd><p>Handles mouse button release events on the canvas.
 On left-button release:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>If nodes were being dragged, commits their new positions.</p></li>
 <li><p>If a selection rectangle was drawn, selects all nodes within it.</p></li>
 <li><p>If the release is a short click on empty space, creates a new node there.</p></li>
 </ul>
-</div></blockquote>
-<p>Resets all drag and selection rectangle state after processing.
-:param event: The Matplotlib mouse event carrying button and position data.
-:type event: matplotlib.backend_bases.MouseEvent
-:return: None</p>
+<p>Resets all drag and selection rectangle state after processing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>event</strong> (<em>matplotlib.backend_bases.MouseEvent</em>) – The Matplotlib mouse event carrying button and position data.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1813,12 +1757,10 @@ On left-button release:</p>
 <span class="sig-name descname"><span class="pre">on_key_press</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.on_key_press"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.on_key_press" title="Link to this definition"></a></dt>
 <dd><p>Handles keyboard press events on the canvas.
 Supported keys:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>Delete: Deletes the currently selected node(s) or edge.</p></li>
 <li><p>Escape: Cancels active edge creation and clears the edge preview.</p></li>
 </ul>
-</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>event</strong> (<em>matplotlib.backend_bases.KeyEvent</em>) – The Matplotlib key event.</p>
@@ -1834,8 +1776,12 @@ Supported keys:</p>
 <span class="sig-name descname"><span class="pre">open_color_palette</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.open_color_palette"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.open_color_palette" title="Link to this definition"></a></dt>
 <dd><p>Opens the edge family color palette menu at the current mouse cursor position.
 Rebuilds the palette UI before displaying so that the icon states (show/hide family colors) 
-always reflect the current application state.
-:return: None</p>
+always reflect the current application state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1843,8 +1789,12 @@ always reflect the current application state.
 <span class="sig-name descname"><span class="pre">open_resize_menu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.open_resize_menu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.open_resize_menu" title="Link to this definition"></a></dt>
 <dd><p>Opens the node-size adjustment panel at the current mouse cursor position.
 The panel can be opened even without a selection because the ‘All’ mode operates on every node.
-A warning is shown only when the panel is actually used in ‘Selected’ mode with no node chosen.
-:return: None</p>
+A warning is shown only when the panel is actually used in ‘Selected’ mode with no node chosen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1861,16 +1811,24 @@ Otherwise, the user selects a color which is applied to the edge.</p>
 <dd><p>Clears and fully reconstructs the graph canvas.
 Draws nodes, labels, edges, self-loops, family color markers, and applies the current zoom.
 If an edge preview is active when this is called (e.g. mid-drag), its endpoints are saved and the preview line 
-is recreated after the redraw so it is not lost.
-:return: None</p>
+is recreated after the redraw so it is not lost.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Graph.refresh_next_node_id">
 <span class="sig-name descname"><span class="pre">refresh_next_node_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.refresh_next_node_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.refresh_next_node_id" title="Link to this definition"></a></dt>
 <dd><p>Recomputes the next available integer node ID.
-Must be called after undo/redo or any external graph modification that may have changed which integer IDs are in use.
-:return: None</p>
+Must be called after undo/redo or any external graph modification that may have changed which integer IDs are in use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1889,10 +1847,15 @@ Sets zoom factor back to 1.0 and redraws the graph.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Graph.set_default_edge_sign">
 <span class="sig-name descname"><span class="pre">set_default_edge_sign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.set_default_edge_sign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.set_default_edge_sign" title="Link to this definition"></a></dt>
-<dd><p>Sets the default sign used for newly created edges.
-:param sign: Edge sign (+1 for activation, -1 for inhibition).
-:type sign: int
-:return: None</p>
+<dd><p>Sets the default sign used for newly created edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sign</strong> (<em>int</em>) – Edge sign (+1 for activation, -1 for inhibition).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1928,12 +1891,18 @@ QMenu container, and builds the initial palette UI.</p>
 <dd><p>Builds the internal graph structure from a BooN model and prepares the canvas for rendering.
 Node IDs are assigned as integers in sorted symbol order. Node positions are taken from boon.pos if 
 available, otherwise computed with a spring layout. Edge signs and colors are read from the interaction 
-graph and stored for later rendering.
-:param boon: The Boolean Network model to visualise.
-:type boon: BooN
-:ivar SIGNCOLOR: Mapping from edge sign values to display colors.
-:type SIGNCOLOR: dict
-:return: None</p>
+graph and stored for later rendering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>boon</strong> (<a class="reference internal" href="#boon.BooN" title="boon.BooN"><em>BooN</em></a>) – The Boolean Network model to visualise.</p>
+</dd>
+</dl>
+<p><code class="docutils literal notranslate"><span class="pre">SIGNCOLOR</span></code> is also stored as an instance attribute for use by the rendering methods.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1962,18 +1931,27 @@ Expands visible color count and rebuilds the palette UI.</p>
 <span class="sig-name descname"><span class="pre">toggle_edge_sign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.toggle_edge_sign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.toggle_edge_sign" title="Link to this definition"></a></dt>
 <dd><p>Toggles the sign of an edge between activation (+1) and inhibition (-1).
 Updates both the logical sign stored in the graph and the display color,
-then emits graph_changed to notify the BooN model.
-:param edge: Edge to toggle as a (src, tgt) tuple.
-:type edge: tuple
-:return: None</p>
+then emits graph_changed to notify the BooN model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edge</strong> (<em>tuple</em>) – Edge to toggle as a (src, tgt) tuple.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Graph.toggle_family_colors">
 <span class="sig-name descname"><span class="pre">toggle_family_colors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Graph.toggle_family_colors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Graph.toggle_family_colors" title="Link to this definition"></a></dt>
 <dd><p>Toggles visibility of edge family color circles and redraws the graph.
-Enables or disables rendering of additional edge grouping markers and refreshes the graph display.
-:return: None</p>
+Enables or disables rendering of additional edge grouping markers and refreshes the graph display.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2000,60 +1978,29 @@ displaying help documentation.
 This class inherits from QMainWindow and is used to load and display an HTML-based
 help file using QWebEngineView. It provides a ‘Close’ button to dismiss the window.
 The layout and UI components are loaded from a .ui file.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar CloseButton<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The button widget used to close the help window.</p>
-</dd>
-<dt class="field-even">type CloseButton<span class="colon">:</span></dt>
-<dd class="field-even"><p>QPushButton</p>
-</dd>
-<dt class="field-odd">ivar web<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A web engine view widget used to render and display the help HTML content.</p>
-</dd>
-<dt class="field-even">type web<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWebEngineView</p>
-</dd>
-<dt class="field-odd">ivar WebContainer<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The container widget to hold the QWebEngineView displaying the help content.</p>
-</dd>
-<dt class="field-even">type WebContainer<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>CloseButton</strong> – The button widget used to close the help window.</p></li>
+<li><p><strong>web</strong> – A web engine view widget used to render and display the help HTML content.</p></li>
+<li><p><strong>WebContainer</strong> – The container widget to hold the QWebEngineView displaying the help content.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="boonify.Model">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">boonify.</span></span><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Model" title="Link to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>A Model class for managing and visualizing network dynamics using a GUI interface.</dt><dd><dl class="field-list simple">
-<dt class="field-odd">ivar parent<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Reference to the parent window or application.</p>
-</dd>
-<dt class="field-even">type parent<span class="colon">:</span></dt>
-<dd class="field-even"><p>Any</p>
-</dd>
-<dt class="field-odd">ivar mode<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Represents the selected mode of dynamics (asynchronous or synchronous).</p>
-</dd>
-<dt class="field-even">type mode<span class="colon">:</span></dt>
-<dd class="field-even"><p>Enum or equivalent</p>
-</dd>
-<dt class="field-odd">ivar layout<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Defines the network layout function to be used for visualization.</p>
-</dd>
-<dt class="field-even">type layout<span class="colon">:</span></dt>
-<dd class="field-even"><p>Callable</p>
-</dd>
-<dt class="field-odd">ivar canvas<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Matplotlib widget for rendering the network visualization.</p>
-</dd>
-<dt class="field-even">type canvas<span class="colon">:</span></dt>
-<dd class="field-even"><p>matplotlib.backends.backend_qt5agg.FigureCanvas</p>
-</dd>
-</dl>
+<dd><p>A Model class for managing and visualizing network dynamics using a GUI interface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – Reference to the parent window or application.</p></li>
+<li><p><strong>mode</strong> – Represents the selected mode of dynamics (asynchronous or synchronous).</p></li>
+<li><p><strong>layout</strong> – Defines the network layout function to be used for visualization.</p></li>
+<li><p><strong>canvas</strong> – Matplotlib widget for rendering the network visualization.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -2061,15 +2008,23 @@ The layout and UI components are loaded from a .ui file.</p>
 <span class="sig-name descname"><span class="pre">cb_network_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Model.cb_network_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Model.cb_network_layout" title="Link to this definition"></a></dt>
 <dd><p>Adjusts the network layout based on the selected option and applies the corresponding layout algorithm to the network. 
 The method retrieves the currently selected network layout from a user interface component, maps it to an appropriate algorithm, and configures 
-the network’s visualization layout accordingly. It also invokes an update via the <cite>modeling</cite> method to apply and reflect the changes.
-:return: None</p>
+the network’s visualization layout accordingly. It also invokes an update via the <cite>modeling</cite> method to apply and reflect the changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Model.modeling">
 <span class="sig-name descname"><span class="pre">modeling</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Model.modeling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Model.modeling" title="Link to this definition"></a></dt>
-<dd><p>Compute the model of dynamics.
-:return: None</p>
+<dd><p>Compute the model of dynamics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2077,8 +2032,12 @@ the network’s visualization layout accordingly. It also invokes an update via 
 <span class="sig-name descname"><span class="pre">rb_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Model.rb_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Model.rb_mode" title="Link to this definition"></a></dt>
 <dd><p>Determine and set the mode of operation based on user selection from the interface. This function checks the state
 of radio buttons to assign either an asynchronous or synchronous mode. The established mode is then used for
-further modeling via a further call to the <cite>modeling</cite> method.
-:return: None</p>
+further modeling via a further call to the <cite>modeling</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -2093,10 +2052,18 @@ Handles transformation between GUI graph representation and BooN model.</p>
 <span class="sig-name descname"><span class="pre">boon_to_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">boon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph_editor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Network.boon_to_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Network.boon_to_graph" title="Link to this definition"></a></dt>
 <dd><p>Converts a BooN logical model back into a GUI graph representation.
 This method rebuilds nodes, edges, positions, labels, and visual properties from the BooN interaction 
-graph and updates the graph editor accordingly.
-:param boon: BooN model to convert.
-:param graph_editor: Target GUI graph editor to populate.
-:return: None</p>
+graph and updates the graph editor accordingly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>boon</strong> – BooN model to convert.</p></li>
+<li><p><strong>graph_editor</strong> – Target GUI graph editor to populate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2132,34 +2099,25 @@ negative sign  -&gt;  negative module index (-k)  -&gt;  literal = Not(src)</p>
 This class represents a graphical interface for visualizing stable states of a Boolean network model. 
 It allows users to switch between different display styles, such as icons or textual representation, 
 for better interpretation of the stable states.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar parent<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Reference to the parent widget or application component.</p>
-</dd>
-<dt class="field-even">type parent<span class="colon">:</span></dt>
-<dd class="field-even"><p>QWidget</p>
-</dd>
-<dt class="field-odd">ivar style<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The display style for representing stable states (e.g., ‘Icon Boolean’).</p>
-</dd>
-<dt class="field-even">type style<span class="colon">:</span></dt>
-<dd class="field-even"><p>str</p>
-</dd>
-<dt class="field-odd">ivar datamodel<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The data model used for organizing and displaying stable states.</p>
-</dd>
-<dt class="field-even">type datamodel<span class="colon">:</span></dt>
-<dd class="field-even"><p>QStandardItemModel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – Reference to the parent widget or application component.</p></li>
+<li><p><strong>style</strong> – The display style for representing stable states (e.g., ‘Icon Boolean’).</p></li>
+<li><p><strong>datamodel</strong> – The data model used for organizing and displaying stable states.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.StableStates.cb_styling">
 <span class="sig-name descname"><span class="pre">cb_styling</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#StableStates.cb_styling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.StableStates.cb_styling" title="Link to this definition"></a></dt>
 <dd><p>Updates the formula display style and refreshes the view.
-This method changes how formulas are rendered (logical, Python, etc.) based on user selection.
-:return: None</p>
+This method changes how formulas are rendered (logical, Python, etc.) based on user selection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2169,8 +2127,12 @@ This method changes how formulas are rendered (logical, Python, etc.) based on u
 This method processes the stable states of a parent object’s model and organizes them into a table-like 
 structure using a Qt <cite>QStandardItemModel</cite>. Each row represents a variable, and each column corresponds 
 to a stable state. The presentation style of the data (e.g., icons, boolean values, or integers) is
-determined by the specified <cite>style</cite> attribute of the object.
-:return: None</p>
+determined by the specified <cite>style</cite> attribute of the object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -2178,44 +2140,45 @@ determined by the specified <cite>style</cite> attribute of the object.
 <dl class="py class">
 <dt class="sig sig-object py" id="boonify.Threader">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">boonify.</span></span><span class="sig-name descname"><span class="pre">Threader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app=&lt;function</span> <span class="pre">Threader.&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Threader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Threader" title="Link to this definition"></a></dt>
-<dd><p>Threader class for managing application execution within a separate thread. 
-This class is designed to separate the execution of a provided application function into its own thread using 
-PyQt’s threading mechanism. The class provides functionality to start, switch, and terminate the application
+<dd><p>Threader class for managing application execution within a separate thread.</p>
+<p>This class is designed to separate the execution of a provided application
+function into its own thread using PyQt’s threading mechanism. The class
+provides functionality to start, switch, and terminate the application
 running within the thread effectively.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar finished<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Signal emitted when the thread’s application completes execution.</p>
-</dd>
-<dt class="field-even">ivar app<span class="colon">:</span></dt>
-<dd class="field-even"><p>The callable application to be executed within the thread.</p>
-</dd>
-<dt class="field-odd">type app<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Callable</p>
-</dd>
-<dt class="field-even">ivar thread<span class="colon">:</span></dt>
-<dd class="field-even"><p>The QThread instance used to run the application in a separate thread.</p>
-</dd>
-<dt class="field-odd">type thread<span class="colon">:</span></dt>
-<dd class="field-odd"><p>QThread</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>finished</strong> – Signal emitted when the thread’s application completes execution.</p></li>
+<li><p><strong>app</strong> – The callable application to be executed within the thread.</p></li>
+<li><p><strong>thread</strong> – The QThread instance used to run the application in a separate thread.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Threader.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">app</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Threader.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Threader.apply" title="Link to this definition"></a></dt>
 <dd><p>Handles the application of a given app instance to a particular object by assigning the provided 
-app to the instance attribute.
-:param app: The application instance to be applied.
-:return: None</p>
+app to the instance attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>app</strong> – The application instance to be applied.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.Threader.quit">
 <span class="sig-name descname"><span class="pre">quit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#Threader.quit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.Threader.quit" title="Link to this definition"></a></dt>
 <dd><p>Attempts to terminate the thread execution in an orderly manner. This method leverages the <cite>quit</cite> function of 
-the thread instance to signal and ensure termination of its event loop.
-:return: None</p>
+the thread instance to signal and ensure termination of its event loop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2230,40 +2193,26 @@ The function encompasses two main operations: invoking the application logic and
 <dl class="py class">
 <dt class="sig sig-object py" id="boonify.View">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">boonify.</span></span><span class="sig-name descname"><span class="pre">View</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#View"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.View" title="Link to this definition"></a></dt>
-<dd><p>Represents a dialog interface for managing and displaying Boolean formulas in a tabular format. 
-The interface supports operations like editing, validating, and converting Boolean formulas, and dynamically 
-updates the view accordingly.
-This class is designed to be a standalone dialog that integrates with a parent component, using its logical 
-formulas and variables for display and interaction.</p>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">ivar style<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Style of the formulas displayed in the view.</p>
-</dd>
-<dt class="field-even">type style<span class="colon">:</span></dt>
-<dd class="field-even"><p>str</p>
-</dd>
-<dt class="field-odd">ivar parent<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Reference to the parent entity using this view, typically the Boonify class, which</p>
-</dd>
-</dl>
-<p>contains the necessary logical formulas and variables.
-:type parent: object
-:ivar formulas: List of formula input fields linked to variables.</p>
-<blockquote>
-<div><p>Each field corresponds to a row in the table, allowing live editing of formulas.</p>
-</div></blockquote>
+<dd><p>Dialog showing Boolean formulas in a table, allowing editing, validation and conversions.</p>
+<p>Integrates with a parent <cite>Boonify</cite> instance to obtain formulas and variables for display.</p>
 <dl class="field-list simple">
-<dt class="field-odd">type formulas<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[QLineEdit]</p>
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>style</strong> – Style of the formulas displayed in the view.</p></li>
+<li><p><strong>parent</strong> – Reference to the parent <cite>Boonify</cite> instance.</p></li>
+<li><p><strong>formulas</strong> – List of formula input fields linked to variables.</p></li>
+</ul>
 </dd>
 </dl>
-</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.View.cb_styling">
 <span class="sig-name descname"><span class="pre">cb_styling</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#View.cb_styling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.View.cb_styling" title="Link to this definition"></a></dt>
-<dd><p>Updates the current styling for the component based on the selected style and refreshes the view.
-:return: None</p>
+<dd><p>Updates the current styling for the component based on the selected style and refreshes the view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -2273,16 +2222,24 @@ formulas and variables for display and interaction.</p>
 This method processes the formula input provided through the GUI, verifies its syntax and the validity of the 
 variables involved, and updates the associated BooN data structure if the formula passes all checks. 
 It also refreshes related components to reflect the changes.
-In case of errors, appropriate error messages are displayed to the user.
-:return: None</p>
+In case of errors, appropriate error messages are displayed to the user.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="boonify.View.convertdnf">
 <span class="sig-name descname"><span class="pre">convertdnf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/boonify.html#View.convertdnf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#boonify.View.convertdnf" title="Link to this definition"></a></dt>
 <dd><p>Converts the current BooNn into Disjunctive Normal Form (DNF)
-and refreshes the view accordingly.
-:return: None</p>
+and refreshes the view accordingly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">

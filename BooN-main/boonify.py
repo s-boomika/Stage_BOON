@@ -79,36 +79,51 @@ class Boonify(QMainWindow):
     Provides a GUI with a comprehensive set of functionalities. This class is primarily responsible for initializing
     and connecting GUI widgets, setting up callbacks, and constructing an editable graph
     for network interaction design.
-        :ivar boon: The current Boolean Network object being managed or displayed.
-        :type boon: BooN
-        :ivar filename: The name of the file associated with the current BooN (empty if no file is loaded or saved).
-        :type filename: str
-        :ivar history: Maintains a history list of BooN objects for undo/redo functionalities.
-        :type history: list
-        :ivar hindex: The index of the last BooN added to the history.
-        :type hindex: int
-        :ivar hupdate: Flag indicating whether the history should be updated.
-        :type hupdate: bool
-        :ivar saved: Flag indicating if the current BooN has been saved.
-        :type saved: bool
-        :ivar QView: Widget for displaying BooN visualization.
-        :type QView: QWidget | None
-        :ivar QStableStates: Widget for displaying stable states of BooNs.
-        :type QStableStates: QWidget | None
-        :ivar QModel: Widget for displaying the dynamic model of the BooN.
-        :type QModel: QWidget | None
-        :ivar QControllability: Widget for displaying BooN controllability analysis.
-        :type QControllability: QWidget | None
-        :ivar editgraph: Editable graphical representation of the BooN's interaction graph.
-        :type editgraph: EditableGraph | None
-        :ivar disablecallback: Flag indicating whether design callbacks are disabled.
-        :type disablecallback: bool
-        :ivar designsize: Scaling factor related to graphics elements in the EditableGraph.
-        :type designsize: float
-        :ivar worker: Background thread for processing long-running BooN operations.
-        :type worker: Threader
-        :ivar canvas: Matplotlib canvas for rendering the network design figure in the GUI.
-        :type canvas: FigureCanvas
+
+    :ivar boon: The current Boolean Network object being managed or displayed.
+    :type boon: BooN
+
+    :ivar filename: The name of the file associated with the current BooN (empty if no file is loaded or saved).
+    :type filename: str
+
+    :ivar history: Maintains a history list of BooN objects for undo/redo functionalities.
+    :type history: list
+
+    :ivar hindex: The index of the last BooN added to the history.
+    :type hindex: int
+
+    :ivar hupdate: Flag indicating whether the history should be updated.
+    :type hupdate: bool
+
+    :ivar saved: Flag indicating if the current BooN has been saved.
+    :type saved: bool
+
+    :ivar QView: Widget for displaying BooN visualization.
+    :type QView: QWidget | None
+
+    :ivar QStableStates: Widget for displaying stable states of BooNs.
+    :type QStableStates: QWidget | None
+
+    :ivar QModel: Widget for displaying the dynamic model of the BooN.
+    :type QModel: QWidget | None
+
+    :ivar QControllability: Widget for displaying BooN controllability analysis.
+    :type QControllability: QWidget | None
+
+    :ivar editgraph: Editable graphical representation of the BooN's interaction graph.
+    :type editgraph: EditableGraph | None
+
+    :ivar disablecallback: Flag indicating whether design callbacks are disabled.
+    :type disablecallback: bool
+
+    :ivar designsize: Scaling factor related to graphics elements in the EditableGraph.
+    :type designsize: float
+
+    :ivar worker: Background thread for processing long-running BooN operations.
+    :type worker: Threader
+
+    :ivar canvas: Matplotlib canvas for rendering the network design figure in the GUI.
+    :type canvas: FigureCanvas
     """
 
     #DEF: Main Window Initialization
@@ -241,7 +256,8 @@ class Boonify(QMainWindow):
 
         Converts the current graph representation into a BooN object, records the change in the history,
         and refreshes all open views.
-            :return: None
+
+        :return: None
         """
         if self.disablecallback:                                                                #Ignore graph_changed signals fired during undo/redo or history updates
             return
@@ -261,7 +277,8 @@ class Boonify(QMainWindow):
         """
         Connect internal application signals to their corresponding handlers.
         If the graph editor has already been created, connect its `graph_changed` signal to the synchronization callback.
-            :return: None
+
+        :return: None
         """
         #STEP: Connect graph editor notifications to the BooN synchronization handler
         if hasattr(self, "graph_editor"):
@@ -273,7 +290,8 @@ class Boonify(QMainWindow):
         Opens a file using a file dialog, loads its contents, and updates the application state.
         Presents a file dialog filtered to .boon files. After a successful selection, loads the BooN,
         refreshes all open views, reinitializes the graph editor, and resets the undo/redo history.
-            :return: None
+
+        :return: None
         """
         filename = QFileDialog.getOpenFileName(self, "Open file", "", "Boon Files (*.boon);; All Files (*);;")
 
@@ -289,7 +307,8 @@ class Boonify(QMainWindow):
         Saves the current BooN to the existing file, or delegates to saveas() if no file is set.
         If self.filename is already defined, the BooN is saved in place and the saved-state indicator is updated. 
         If no filename exists yet (e.g. new unsaved network), the Save As dialog is opened.
-            :return: None
+
+        :return: None
         """
         if self.filename:
             self.boon.save(self.filename)
@@ -302,7 +321,8 @@ class Boonify(QMainWindow):
         Opens a Save As dialog and saves the current BooN to the chosen file.
         Updates self.filename with the selected path and refreshes the saved-state indicator.
         Does nothing if the dialog is cancelled.
-            :return: None
+
+        :return: None
         """
         filename = QFileDialog.getSaveFileName(self, "Save", "", "Boon Files (*.boon);; All Files (*);;")
         if filename:
@@ -316,7 +336,8 @@ class Boonify(QMainWindow):
         Supported formats are BoolNet (.bnet), Python/SymPy (.txt), and SBML (.sbml, .xml).
         After a successful import, self.filename is set to None because the BooN is not stored in the native .boon format. 
         All open views are refreshed and the history is reset. An error dialog is shown if the file extension isn't recognised.
-            :return: None
+
+        :return: None
         """
         filename = QFileDialog.getOpenFileName(self, "Import from files", "", "Text or SBML Files (*.bnet *.txt *.xml *.sbml);; All Files (*);;")
         if filename:
@@ -343,8 +364,9 @@ class Boonify(QMainWindow):
         Exports the current BooN to an external file format via a Save dialog.
         Supported formats are BoolNet (.bnet) and Python/SymPy (.txt). 
         The export format is determined automatically from the chosen file extension.
-            :raises ValueError: If the filename extension is unsupported or invalid.
-            :return: None
+
+        :raises ValueError: If the filename extension is unsupported or invalid.
+        :return: None
         """
         filename = QFileDialog.getSaveFileName(self, "Export to BoolNet or Python format.", "", "Text Files (*.bnet *.txt);;")
         if not filename[0]:
@@ -365,7 +387,8 @@ class Boonify(QMainWindow):
         Terminates the application, prompting the user to save if there are unsaved changes.
         If the BooN is already saved, the application exits immediately. Otherwise a dialog
         offers three choices: Save then quit, Quit without saving, or Cancel.
-            :return: None
+
+        :return: None
         """
         #STEP: Exit directly if there are no unsaved changes.
         if self.saved:
@@ -400,9 +423,11 @@ class Boonify(QMainWindow):
         This method ensures that when the application's close event is triggered, it invokes the quit method to handle 
         quitting properly. The `event.ignore()` ensures that the close event is ignored unless the application is closed 
         successfully prior to that, in which case `event.ignore()` will not execute.
-            :param event: The Qt close event triggered when the user closes the window.
-            :type event: QCloseEvent
-            :return: None
+
+        :param event: The Qt close event triggered when the user closes the window.
+        :type event: QCloseEvent
+
+        :return: None
         """
         self.quit()
         event.ignore()  #WARNING: If the application is closed when quit() is triggered, this line will not be executed.
@@ -412,10 +437,9 @@ class Boonify(QMainWindow):
         """
         Resets both BooN history and color history, then records the current state as the first entry.
         Called after loading or importing a file to start a fresh undo/redo stack from the new state.
-            :ivar history: BooN snapshot list, size HSIZE.
-            :ivar color_history: edge_family_colors snapshot list, size HSIZE (parallel to history).
-            :ivar hindex: Current position in both history lists.
-            :ivar hupdate: Flag indicating whether a new entry was recorded, set to False after reset.
+        Resets ``history``, ``color_history``, ``hindex``, and ``hupdate`` to their initial values.
+
+        :return: None
         """
         self.history = [None] * HSIZE                                       #Clear all BooN snapshots from history
         self.color_history = [None] * HSIZE                                 #Clear all edge_family_colors snapshots from color history
@@ -429,7 +453,8 @@ class Boonify(QMainWindow):
         Restores the previous BooN and edge family colors from the parallel history stacks.
         Moves the history cursor one step back. Edge colors are restored before setup_design so the graph redraw 
         immediately uses the correct color state. Does nothing if the previous slot is empty (ex: beginning of history).
-            :return: None
+
+        :return: None
         """
         hindex = (self.hindex - 1) % HSIZE                                  #Compute the previous history index
         
@@ -451,7 +476,8 @@ class Boonify(QMainWindow):
         Moves the history cursor one step forward. Edge colors are restored before setup_design
         so the graph redraw immediately uses the correct color state.
         Does nothing if the next slot is empty (i.e. the top of history is reached).
-            :return: None
+
+        :return: None
         """
         hindex = (self.hindex + 1) % HSIZE                                  #Compute the next history index
 
@@ -474,9 +500,12 @@ class Boonify(QMainWindow):
 
         Both self.history (BooN snapshots) and self.color_history (edge_family_colors snapshots) are always 
         advanced together so their indices stay in sync.
-            WARNING: BooN equality is based on descriptors only (see BooN.__eq__).
+        .. warning::
+
+            BooN equality is based on descriptors only (see ``BooN.__eq__``).
             Color-only changes do NOT create a new entry here: use add_color_history() for those.
-            :return: None
+
+        :return: None
         """
         hindex = self.hindex
 
@@ -501,7 +530,8 @@ class Boonify(QMainWindow):
         when the BooN descriptor itself has not changed.
         A new slot is created only if the color dict actually differs from the last recorded snapshot,
         so selecting the same color twice produces only one history entry.
-            :return: None
+
+        :return: None
         """
         current_colors = dict(getattr(self.graph_editor, "edge_family_colors", {}))
         current_pos = dict(getattr(self.boon, "pos", {}) or {})
@@ -526,7 +556,8 @@ class Boonify(QMainWindow):
         and rendering logic using a tabulated structure. The current history index is highlighted, and 
         associated data details are presented using a plain tabular format. If a history entry lacks data,
         it displays a placeholder.
-            :return: None
+
+        :return: None
         """
         view = []
         for i, theboon in enumerate(self.history):
@@ -542,7 +573,8 @@ class Boonify(QMainWindow):
         Refreshes all visible components, such as BooN View, Stable States View, Model View, and Controllability
         View. Each visible component is reinitialized or updated via its relevant function. This ensures that 
         all active components reflect the most current state.
-            :return: None
+
+        :return: None
         """
         if self.QView and self.QView.isVisible():                           #Refresh the BooN View if opened.
             self.QView.initialize_view()
@@ -557,7 +589,8 @@ class Boonify(QMainWindow):
     def help(self):
         """
         Provides functionality to call and display help using an external Help object.
-            :return: None
+
+        :return: None
         """
         thehelp = Help(self)
         thehelp.show()
@@ -566,7 +599,8 @@ class Boonify(QMainWindow):
         """
         Opens the BooN View window, which displays the Boolean equations of the current network.
         The instance is stored in self.QView so that refresh() can update it while it is open.
-            :return: None
+
+        :return: None
         """
         self.QView = View(self)
         self.QView.show()
@@ -575,7 +609,8 @@ class Boonify(QMainWindow):
         """
         Opens the Stable States window, which computes and displays the stable states of the current BooN.
         The instance is stored in self.QStableStates so that refresh() can update it while it is open.
-            :return: None
+
+        :return: None
         """
         self.QStableStates = StableStates(self)
         self.QStableStates.show()
@@ -585,7 +620,8 @@ class Boonify(QMainWindow):
         Opens the Dynamical Model window, which draws the state-transition graph of the current BooN.
         Refused if the number of variables exceeds MODELBOUND, since the state space grows as 2^n
         and the graph would be too large to render.
-            :return: None
+
+        :return: None
         """
         if len(self.boon.variables) > MODELBOUND:
             QMessageBox.critical(self, "No Model", f"The number of variables exceeds {MODELBOUND}.\nThe model cannot be drawn.")
@@ -597,7 +633,8 @@ class Boonify(QMainWindow):
         """
         Opens the Controllability window, which computes control actions to drive the BooN toward a target marking profile.
         The instance is stored in self.QControllability so that refresh() can update it while it is open.
-            :return: None
+
+        :return: None
         """
         self.QControllability = Controllability(self)
         self.QControllability.show()
@@ -607,9 +644,11 @@ class Boonify(QMainWindow):
         Displays a flag in the status bar indicating whether the data has been saved. 
         A large empty circle (○) means the BooN is saved; a large filled circle (⬤) means it has unsaved changes. 
         Also updates self.saved so that quit() can check the state consistently.
-            :param val: True if the BooN is saved, False if it has unsaved changes. Defaults to True.
-            :type val: bool
-            :return: None
+
+        :param val: True if the BooN is saved, False if it has unsaved changes. Defaults to True.
+        :type val: bool
+
+        :return: None
         """
         NOTSAVED: str = '\u2B24'                                            #Large black/filled circle: unsaved changes
         SAVED: str = '\u25CB'                                               #Large empty circle: saved 
@@ -627,46 +666,66 @@ class Graph(QObject):
     a Matplotlib canvas embedded in the PyQt5 GUI.
     Handles node/edge creation, deletion, renaming, selection, dragging, zooming, edge sign toggling, 
     family color assignment, and self-loop rendering.
-        :ivar canvas: The Matplotlib canvas used for rendering the graph.
-        :type canvas: FigureCanvas
-        :ivar axes: The Matplotlib axes used for drawing.
-        :type axes: matplotlib.axes.Axes
-        :ivar graph: The directed graph storing nodes and edges.
-        :type graph: networkx.DiGraph
-        :ivar node_positions: Dictionary mapping node IDs to (x, y) coordinates.
-        :type node_positions: dict
-        :ivar node_labels: Dictionary mapping node IDs to their display labels.
-        :type node_labels: dict
-        :ivar next_node_id: Counter for assigning unique integer IDs to new nodes.
-        :type next_node_id: int
-        :ivar edge_colors: Mapping from edge (u, v) to RGB display color.
-        :type edge_colors: dict
-        :ivar edge_labels: Mapping from edge (u, v) to its display label.
-        :type edge_labels: dict
-        :ivar edge_modules: Mapping from edge (u, v) to its BooN module set.
-        :type edge_modules: dict
-        :ivar default_edge_sign: Default sign for newly created edges (+1 or -1).
-        :type default_edge_sign: int
-        :ivar selected_nodes: Set of currently selected node IDs.
-        :type selected_nodes: set
-        :ivar selected_edge: Currently selected edge as (src, tgt), or None.
-        :type selected_edge: tuple or None
-        :ivar zoom_factor: Current zoom level multiplier.
-        :type zoom_factor: float
-        :ivar edge_family_colors: Mapping from edge (u, v) to its family RGB color.
-        :type edge_family_colors: dict
-        :ivar show_family_colors: Whether to render family color markers on edges.
-        :type show_family_colors: bool
-        :ivar graph_changed: Qt signal emitted whenever the graph topology changes.
-        :type graph_changed: pyqtSignal
-        :ivar NODE_SIZE_DEFAULT: Default (and minimum) node size in Matplotlib units.
-        :type NODE_SIZE_DEFAULT: int
-        :ivar NODE_SIZE_MAX: Maximum allowed node size.
-        :type NODE_SIZE_MAX: int
-        :ivar NODE_SIZE_STEP: Size increment/decrement step.
-        :type NODE_SIZE_STEP: int
-        :ivar node_sizes: Per-node size overrides; absent key falls back to NODE_SIZE_DEFAULT.
-        :type node_sizes: dict
+
+    :ivar canvas: The Matplotlib canvas used for rendering the graph.
+    :type canvas: FigureCanvas
+
+    :ivar axes: The Matplotlib axes used for drawing.
+    :type axes: matplotlib.axes.Axes
+
+    :ivar graph: The directed graph storing nodes and edges.
+    :type graph: networkx.DiGraph
+
+    :ivar node_positions: Dictionary mapping node IDs to (x, y) coordinates.
+    :type node_positions: dict
+
+    :ivar node_labels: Dictionary mapping node IDs to their display labels.
+    :type node_labels: dict
+
+    :ivar next_node_id: Counter for assigning unique integer IDs to new nodes.
+    :type next_node_id: int
+
+    :ivar edge_colors: Mapping from edge (u, v) to RGB display color.
+    :type edge_colors: dict
+
+    :ivar edge_labels: Mapping from edge (u, v) to its display label.
+    :type edge_labels: dict
+
+    :ivar edge_modules: Mapping from edge (u, v) to its BooN module set.
+    :type edge_modules: dict
+
+    :ivar default_edge_sign: Default sign for newly created edges (+1 or -1).
+    :type default_edge_sign: int
+
+    :ivar selected_nodes: Set of currently selected node IDs.
+    :type selected_nodes: set
+
+    :ivar selected_edge: Currently selected edge as (src, tgt), or None.
+    :type selected_edge: tuple or None
+
+    :ivar zoom_factor: Current zoom level multiplier.
+    :type zoom_factor: float
+
+    :ivar edge_family_colors: Mapping from edge (u, v) to its family RGB color.
+    :type edge_family_colors: dict
+
+    :ivar show_family_colors: Whether to render family color markers on edges.
+    :type show_family_colors: bool
+
+    :ivar graph_changed: Qt signal emitted whenever the graph topology changes.
+    :type graph_changed: pyqtSignal
+
+    :ivar NODE_SIZE_DEFAULT: Default (and minimum) node size in Matplotlib units.
+    :type NODE_SIZE_DEFAULT: int
+
+    :ivar NODE_SIZE_MAX: Maximum allowed node size.
+    :type NODE_SIZE_MAX: int
+
+    :ivar NODE_SIZE_STEP: Size increment/decrement step.
+    :type NODE_SIZE_STEP: int
+
+    :ivar node_sizes: Per-node size overrides; absent key falls back to NODE_SIZE_DEFAULT.
+    :type node_sizes: dict
     """
 
     graph_changed = pyqtSignal()
@@ -674,8 +733,9 @@ class Graph(QObject):
     def __init__(self, canvas):
         """
         Initializes the Graph editor and attaches it to a Matplotlib canvas.
-            :param canvas: The Matplotlib FigureCanvas used for rendering.
-            :type canvas: FigureCanvas
+
+        :param canvas: The Matplotlib FigureCanvas used for rendering.
+        :type canvas: FigureCanvas
         """
         super().__init__()
         self.canvas = canvas
@@ -723,11 +783,12 @@ class Graph(QObject):
         Node IDs are assigned as integers in sorted symbol order. Node positions are taken from boon.pos if 
         available, otherwise computed with a spring layout. Edge signs and colors are read from the interaction 
         graph and stored for later rendering.
-            :param boon: The Boolean Network model to visualise.
-            :type boon: BooN
-            :ivar SIGNCOLOR: Mapping from edge sign values to display colors.
-            :type SIGNCOLOR: dict
-            :return: None
+
+        :param boon: The Boolean Network model to visualise.
+        :type boon: BooN
+        ``SIGNCOLOR`` is also stored as an instance attribute for use by the rendering methods.
+
+        :return: None
         """
         self.boon = boon                                                            #Reference BooN model for synchronization with the graph editor
         self.canvas.axes.clear()
@@ -753,8 +814,6 @@ class Graph(QObject):
         else:                                                                       #Or else: use a spring layout to compute node positions
             sym_layout = nx.spring_layout(ig)
             self.node_positions = {symbol_to_id[sym]: coord for sym, coord in sym_layout.items()}
-        print("setup_design boon.pos:", {str(k): v for k, v in (getattr(boon, 'pos', None) or {}).items()})
-        print("setup_design node_positions:", {self.node_labels.get(k, k): v for k, v in self.node_positions.items()})
 
         #STEP: Restore per-node sizes from boon.meta if available
         self.node_sizes = {}
@@ -786,11 +845,14 @@ class Graph(QObject):
         Tracks node position updates during dragging without committing changes.
         Updates the internal node position dictionary for all selected nodes based on the drag
         delta and refreshes the visualization.
-            :param dx: Horizontal movement delta.
-            :type dx: float
-            :param dy: Vertical movement delta.
-            :type dy: float
-            :return: None
+
+        :param dx: Horizontal movement delta.
+        :type dx: float
+
+        :param dy: Vertical movement delta.
+        :type dy: float
+
+        :return: None
         """
         #STEP: Shift the positions of all selected nodes by the drag delta (dx, dy) and redraw
         for node in self.selected_nodes:
@@ -804,7 +866,8 @@ class Graph(QObject):
         Persists the final dragged positions of selected nodes into the BooN model.
         Called once on mouse release after a node drag. Writes the current node_positions
         values back to boon.pos so that saving the file preserves the layout.
-            :return: None
+
+        :return: None
         """
         #STEP: Build reverse map from int node ID to sympy symbol
         id_to_symbol = {
@@ -828,17 +891,17 @@ class Graph(QObject):
         if hasattr(self, "_boonify_parent"):
             self._boonify_parent.add_history()
 
-        print("node_positions:", {self.node_labels[n]: self.node_positions[n] for n in self.selected_nodes if n in self.node_labels})
-        print("boon.pos:      ", {str(k): v for k, v in self.boon.pos.items()})
 
     def _apply_edge_color(self, rgb):
         """
         Applies a visual color to the currently selected edge.
         Updates the edge color mapping for the selected edge in both directions (if bidirectional) 
         and refreshes the graph display.
-            :param rgb: RGB color tuple withvalues in [0, 1].
-            :type rgb: tuple[float, float, float]
-            :return: None
+
+        :param rgb: RGB color tuple withvalues in [0, 1].
+        :type rgb: tuple[float, float, float]
+
+        :return: None
         """
         if not self.selected_edge:
             return
@@ -853,10 +916,12 @@ class Graph(QObject):
         Changes the sign and display color of the currently selected edge.
         Updates both the logical sign stored in the graph and the visual color mapping, then emits a graph 
         update (graph_changed) signal after modification to notify the BooN model.
-            :param sign: New sign value for the edge(+1 for activation, -1 for inhibition).
-            :type sign: int
-            :raises QMessageBox.warning: If no edge is currently selected.
-            :return: None
+
+        :param sign: New sign value for the edge(+1 for activation, -1 for inhibition).
+        :type sign: int
+
+        :raises QMessageBox.warning: If no edge is currently selected.
+        :return: None
         """
         if not self.selected_edge:                                                  #Show error: if no edge selected
             QMessageBox.warning(None, "No edge selected", "Please click an edge first.")
@@ -873,9 +938,11 @@ class Graph(QObject):
     def set_default_edge_sign(self, sign):
         """
         Sets the default sign used for newly created edges.
-            :param sign: Edge sign (+1 for activation, -1 for inhibition).
-            :type sign: int
-            :return: None
+
+        :param sign: Edge sign (+1 for activation, -1 for inhibition).
+        :type sign: int
+
+        :return: None
         """
         self.default_edge_sign = sign
 
@@ -884,11 +951,14 @@ class Graph(QObject):
         Add a new node at the specified position in the graph.
         Assigns the next available integer ID, generates a default label (e.g., "x3"), stores position and label, 
         redraws the graph, and emits the ``graph_changed`` signal.
-            :param x: X coordinate in data (axes) space.
-            :type x: float
-            :param y: Y coordinate in data (axes) space.
-            :type y: float
-            :return: None
+
+        :param x: X coordinate in data (axes) space.
+        :type x: float
+
+        :param y: Y coordinate in data (axes) space.
+        :type y: float
+
+        :return: None
         """
         new_id = self.next_node_id                                                  #Assign next available int ID to new node
         self.next_node_id += 1                                                      #Increment counter for unique node IDs
@@ -906,7 +976,8 @@ class Graph(QObject):
         """
         Recomputes the next available integer node ID.
         Must be called after undo/redo or any external graph modification that may have changed which integer IDs are in use.
-            :return: None
+
+        :return: None
         """
         int_nodes = [n for n in self.graph.nodes if isinstance(n, int)]
 
@@ -920,9 +991,11 @@ class Graph(QObject):
         Generates the next available default node label.
         Only labels matching the pattern "x<number>" are considered. Custom renamed nodes are 
         ignored when computing the next index.
-            :return: Next generated label (e.g., "x3").
-            :rtype: str
-        Example:
+
+        :return: Next generated label (e.g., "x3").
+        :rtype: str
+        Example::
+
             x1, x2 -> x3
             tom, x2, x3 -> x4
         """
@@ -943,11 +1016,14 @@ class Graph(QObject):
         Creates a directed edge between two nodes with the current default sign.
         Assigns the default family color (white) and the sign-matching display color, clears the selection state,
         redraws the graph, and emits graph_changed. Does nothing if the edge already exists.
-            :param source: Source node identifier.
-            :param target: Target node identifier.
-            :type source: any
-            :type target: any
-            :return: None
+
+        :param source: Source node identifier.
+
+        :param target: Target node identifier.
+        :type source: any
+        :type target: any
+
+        :return: None
         """
         self._clear_edge_preview()                                                      #Clear the drag preview line before committing the edge
 
@@ -975,10 +1051,12 @@ class Graph(QObject):
         Computes the optimal placement angle for a self-loop edge on the given node.
         Finds the largest angular gap between neighboring nodes around the target node, then places the loop at the midpoint of 
         that gap to minimise visual overlap. Falls back to a straight-up angle (π/2) when the node has no neighbors.
-            :param node: Node identifier.
-            :type node: any
-            :return: Angle in radians for self-loop placement, measured from the positive x-axis.
-            :rtype: float
+
+        :param node: Node identifier.
+        :type node: any
+
+        :return: Angle in radians for self-loop placement, measured from the positive x-axis.
+        :rtype: float
         """
         #STEP: Collect all neighboring nodes
         neighbors = set(self.graph.predecessors(node)) | set(self.graph.successors(node))
@@ -1016,7 +1094,8 @@ class Graph(QObject):
         """
         Renders all nodes on the canvas with per-node sizing.
         Node sizes are looked up individually from node_sizes, falling back to NODE_SIZE_DEFAULT.
-            :return: None
+
+        :return: None
         """
         nodes = list(self.graph.nodes())
         sizes = [self.node_sizes.get(n, self.NODE_SIZE_DEFAULT) for n in nodes]
@@ -1037,7 +1116,8 @@ class Graph(QObject):
         center. All nodes are at default size in this mode so the fixed offset is consistent everywhere.
         When node_label_top is False, LABEL_VERTICAL_OFFSET = 0 centers the label on the node.
         Labels containing separators are wrapped by _wrap_node_label before display.
-            :return: None
+
+        :return: None
         """
         #STEP: Choose vertical offset based on label-position mode
         if getattr(self, "node_label_top", False):
@@ -1074,7 +1154,8 @@ class Graph(QObject):
         Draws all non-self-loop edges, dispatching to the appropriate drawing function.
         Bidirectional pairs are drawn once together by _draw_bidirectional_edges; each unidirectional edge 
         is drawn individually by _draw_normal_edge. Self-loops are handled separately by _draw_self_loops.
-            :return: None
+
+        :return: None
         """
         drawn_pairs = set()
         for u, v in self.graph.edges():
@@ -1099,11 +1180,14 @@ class Graph(QObject):
         """
         Draws a single directed edge from u to v.
         The full node size list is passed to networkx so it can offset the arrowhead correctly away from the target node border.
-            :param u: Source node identifier.
-            :param v: Target node identifier.
-            :type u: any
-            :type v: any
-            :return: None
+
+        :param u: Source node identifier.
+
+        :param v: Target node identifier.
+        :type u: any
+        :type v: any
+
+        :return: None
         """
         #WARNING: node_size must list sizes in the order of ALL nodes so networkx can correctly offset the arrowhead away from the target node border.
         nodes = list(self.graph.nodes())
@@ -1126,9 +1210,12 @@ class Graph(QObject):
         Applies a perpendicular offset so that u→v and v→u edges are both visible without overlap. 
         The offset direction is derived from the canonical (sorted-name) ordering of u and v, which must stay consistent with _get_nearest_edge 
         and _draw_family_circles to ensure hit-testing and marker placement align with the rendered lines.
-            :param u: First node.
-            :param v: Second node.
-            :return: None
+
+        :param u: First node.
+
+        :param v: Second node.
+
+        :return: None
         """
         x1, y1 = self.node_positions[u]
         x2, y2 = self.node_positions[v]
@@ -1197,7 +1284,8 @@ class Graph(QObject):
         The loop orientation is chosen by _compute_self_loop_angle to avoid neighboring nodes.
         The anchor radius scales with node size so the arc always clears the node border,
         while the arc size R stays fixed so the loop itself does not grow with the node.
-            :return: None
+
+        :return: None
         """
         for u, v in self.graph.edges():
             if u != v:
@@ -1268,7 +1356,8 @@ class Graph(QObject):
         Draws a small colored circle at the midpoint of each edge that has a non-default family color.
         Markers are placed on self-loops, normal edges, and bidirectional edges using the same geometry as their respective draw 
         functions to ensure visual alignment. Edges with BASIC_FAMILY_COLOR (white) are skipped — white means no family assigned.
-            :return: None
+
+        :return: None
         """
         if not self.show_family_colors or not self.edge_family_colors:
             return
@@ -1373,7 +1462,8 @@ class Graph(QObject):
         """
         Adjusts the axis limits to implement the current zoom level.
         Zooming is centered on (0.5, 0.5) in data space. A higher zoom_factor narrows the visible range, magnifying the graph.
-            :return: None
+
+        :return: None
         """
         ax = self.canvas.axes
         center_x = 0.5
@@ -1389,15 +1479,20 @@ class Graph(QObject):
         """
         Draws a temporary preview line for edge creation.
         Used during interactive edge creation to show a dashed line between source node and current mouse position.
-            :param x1: Start X coordinate in data space.
-            :type x1: float
-            :param y1: Start Y coordinate in data space.
-            :type y1: float
-            :param x2: End X coordinate in data space (current mouse position).
-            :type x2: float
-            :param y2: End Y coordinate in data space (current mouse position).
-            :type y2: float
-            :return: None
+
+        :param x1: Start X coordinate in data space.
+        :type x1: float
+
+        :param y1: Start Y coordinate in data space.
+        :type y1: float
+
+        :param x2: End X coordinate in data space (current mouse position).
+        :type x2: float
+
+        :param y2: End Y coordinate in data space (current mouse position).
+        :type y2: float
+
+        :return: None
         """
         #STEP: Remove the previous preview line before drawing the updated one
         if self.edge_preview is not None:
@@ -1423,7 +1518,8 @@ class Graph(QObject):
         """
         Removes the current edge preview from the canvas.
         Clears temporary visualization used during interactive edge creation.
-            :return: None
+
+        :return: None
         """
         if self.edge_preview is not None:
             try:
@@ -1437,7 +1533,8 @@ class Graph(QObject):
         """
         Toggles visibility of edge family color circles and redraws the graph.
         Enables or disables rendering of additional edge grouping markers and refreshes the graph display.
-            :return: None
+
+        :return: None
         """
         self.show_family_colors = not self.show_family_colors
         self.redraw_graph()
@@ -1447,9 +1544,11 @@ class Graph(QObject):
         Toggles the sign of an edge between activation (+1) and inhibition (-1).
         Updates both the logical sign stored in the graph and the display color,
         then emits graph_changed to notify the BooN model.
-            :param edge: Edge to toggle as a (src, tgt) tuple.
-            :type edge: tuple
-            :return: None
+
+        :param edge: Edge to toggle as a (src, tgt) tuple.
+        :type edge: tuple
+
+        :return: None
         """
         src, tgt = edge
         current_sign = self.graph[src][tgt].get("sign", 1)
@@ -1465,7 +1564,8 @@ class Graph(QObject):
         Draws nodes, labels, edges, self-loops, family color markers, and applies the current zoom.
         If an edge preview is active when this is called (e.g. mid-drag), its endpoints are saved and the preview line 
         is recreated after the redraw so it is not lost.
-            :return: None
+
+        :return: None
         """
         #STEP: Store the active edge preview endpoints before clearing the axes
         preview = self.edge_preview
@@ -1519,9 +1619,11 @@ class Graph(QObject):
             - Left-click on edge (no node nearby): selects the edge.
             - Left-click on node: selects the node for dragging (Shift adds to selection).
             - Left-click on empty space: begins a rubber-band selection rectangle or prepares a node creation on release.
-            :param event: The Matplotlib mouse event carrying button, position, and modifier data.
-            :type event: matplotlib.backend_bases.MouseEvent
-            :return: None
+
+        :param event: The Matplotlib mouse event carrying button, position, and modifier data.
+        :type event: matplotlib.backend_bases.MouseEvent
+
+        :return: None
         """
         #STEP: Cancel edge creation if right-click on empty space
         if event.button == 3 and self.edge_source is not None:
@@ -1543,7 +1645,6 @@ class Graph(QObject):
             if nearest_node is not None:
                 if self.edge_source is None:
                     self.edge_source = nearest_node
-                    print(f"Edge source selected: {nearest_node}")
                 else:
                     source = self.edge_source
                     target = nearest_node
@@ -1557,7 +1658,6 @@ class Graph(QObject):
                 self.toggle_edge_sign(nearest_edge)
                 self.selected_edge = nearest_edge
                 self.selected_nodes.clear()
-                print(f"Toggled edge sign: {nearest_edge}")
                 return
             
         #STEP: Left-click on an edge to select the edge
@@ -1577,7 +1677,6 @@ class Graph(QObject):
             self.selection_rect_start = None
             self.dragging_nodes = True
             self.is_dragging = False
-            print(f"Selected node for dragging: {nearest_node}")
             return
         
         #STEP: Left click on empty space to start selection rectangle or to create node
@@ -1594,18 +1693,20 @@ class Graph(QObject):
         """
         Handles mouse button release events on the canvas.
         On left-button release:
-            - If nodes were being dragged, commits their new positions.
-            - If a selection rectangle was drawn, selects all nodes within it.
-            - If the release is a short click on empty space, creates a new node there.
+
+        - If nodes were being dragged, commits their new positions.
+        - If a selection rectangle was drawn, selects all nodes within it.
+        - If the release is a short click on empty space, creates a new node there.
+
         Resets all drag and selection rectangle state after processing.
-            :param event: The Matplotlib mouse event carrying button and position data.
-            :type event: matplotlib.backend_bases.MouseEvent
-            :return: None
+
+        :param event: The Matplotlib mouse event carrying button and position data.
+        :type event: matplotlib.backend_bases.MouseEvent
+
+        :return: None
         """
         if event.button == 1:                                                   #If left mouse click released
-            print("release fired, is_dragging:", self.is_dragging, "tracked:", bool(self.tracked_positions))
             if self.is_dragging:                                                #If dragged, take the new positions
-                print("committing positions")
                 self._commit_tracked_positions()
                 self.tracked_positions.clear()
 
@@ -1643,12 +1744,15 @@ class Graph(QObject):
         """
         Handles mouse motion events on the canvas.
         Priority order:
-            1. Edge preview: if an edge source is set, draws a dashed preview line.
-            2. Selection rectangle: if dragging on empty space, draws a dashed rectangle.
-            3. Node dragging: if nodes are selected and being dragged, updates their positions.
-            :param event: The Matplotlib mouse event carrying position data.
-            :type event: matplotlib.backend_bases.MouseEvent
-            :return: None
+
+        1. Edge preview: if an edge source is set, draws a dashed preview line.
+        2. Selection rectangle: if dragging on empty space, draws a dashed rectangle.
+        3. Node dragging: if nodes are selected and being dragged, updates their positions.
+
+        :param event: The Matplotlib mouse event carrying position data.
+        :type event: matplotlib.backend_bases.MouseEvent
+
+        :return: None
         """
         if event.xdata is None or event.ydata is None:
             return
@@ -1700,11 +1804,14 @@ class Graph(QObject):
         """
         Handles keyboard press events on the canvas.
         Supported keys:
-            - Delete: Deletes the currently selected node(s) or edge.
-            - Escape: Cancels active edge creation and clears the edge preview.
-            :param event: The Matplotlib key event.
-            :type event: matplotlib.backend_bases.KeyEvent
-            :return: None
+
+        - Delete: Deletes the currently selected node(s) or edge.
+        - Escape: Cancels active edge creation and clears the edge preview.
+
+        :param event: The Matplotlib key event.
+        :type event: matplotlib.backend_bases.KeyEvent
+
+        :return: None
         """
         if event.key == 'delete':
             self.delete_selection()    
@@ -1717,30 +1824,33 @@ class Graph(QObject):
         Handles a double-click on a node to create an edge via two successive double-clicks.
         The first double-click stores the source node; the second creates the edge to the target.
         Self-loops are allowed (double-clicking the same node twice).
-            :param node: The node that was double-clicked.
-            :return: None
+
+        :param node: The node that was double-clicked.
+
+        :return: None
         """
         if node is None:
             return
         if self.double_click_node is None:
             self.double_click_node = node                                                               
-            print(f"Edge creation: First node selected: {node}")
         else:
             source = self.double_click_node                                                             #Store first/source node selected
             target = node                                                                               #Store second/target node selected: to create an edge
             self._create_edge(source, target)
             self.double_click_node = None                                                               #Reset after edge creation
-            print(f"Edge created: {source} -> {target}")
 
     #DEF: UI helpers/color tools
     def _select_node(self, node, shift_pressed=False):
         """
         Selects or deselects a node, with optional multi-select via Shift.
         Without Shift, replaces the entire selection with this node alone. With Shift, toggles the node in or out of the current selection.
-            :param node: The node identifier to select or deselect.
-            :param shift_pressed: True to toggle (multi-select), False to replace selection.
-            :type shift_pressed: bool
-            :return: None
+
+        :param node: The node identifier to select or deselect.
+
+        :param shift_pressed: True to toggle (multi-select), False to replace selection.
+        :type shift_pressed: bool
+
+        :return: None
         """
         if shift_pressed:
             if node in self.selected_nodes:
@@ -1756,15 +1866,20 @@ class Graph(QObject):
         Selects all graph nodes whose positions fall within the specified rectangle.
         Only user-created nodes (integer or Symbol IDs) are considered;
         internal pattern nodes are ignored. The rectangle is axis-aligned and defined by any two opposite corners.
-            :param x1: X coordinate of the first corner.
-            :type x1: float
-            :param y1: Y coordinate of the first corner.
-            :type y1: float
-            :param x2: X coordinate of the opposite corner.
-            :type x2: float
-            :param y2: Y coordinate of the opposite corner.
-            :type y2: float
-            :return: None
+
+        :param x1: X coordinate of the first corner.
+        :type x1: float
+
+        :param y1: Y coordinate of the first corner.
+        :type y1: float
+
+        :param x2: X coordinate of the opposite corner.
+        :type x2: float
+
+        :param y2: Y coordinate of the opposite corner.
+        :type y2: float
+
+        :return: None
         """
         if self.graph is None:
             return
@@ -1784,10 +1899,12 @@ class Graph(QObject):
         """
         Deletes the currently selected nodes or edge from the graph.
         Priority:
-            - If nodes are selected, removes them and all their connected edges.
-            - If only an edge is selected, removes that edge.
-            - If nothing is selected, displays a warning dialog.
-            :return: None
+
+        - If nodes are selected, removes them and all their connected edges.
+        - If only an edge is selected, removes that edge.
+        - If nothing is selected, displays a warning dialog.
+
+        :return: None
         """
         if self.selected_nodes:                                                             #If node selected
             self._delete_selected_nodes()                                                   #Delete node and associated edges
@@ -1804,7 +1921,8 @@ class Graph(QObject):
         Deletes all currently selected nodes and all their connected edges.
         Removes each node from the graph, purges its position and label entries, and clears any edge color or family 
         color records that reference the deleted nodes. Redraws the graph and emits graph_changed.
-            :return: None
+
+        :return: None
         """
         if not self.selected_nodes:
             return
@@ -1829,7 +1947,8 @@ class Graph(QObject):
         Deletes the currently selected edge and clears its visual metadata.
         Removes the edge from the graph and purges its entries from edge_colors and edge_family_colors. 
         Redraws the graph and emits graph_changed.
-            :return: None
+
+        :return: None
         """
         if not self.selected_edge:
             return
@@ -1846,13 +1965,17 @@ class Graph(QObject):
     def _get_nearest_node(self, x, y, threshold=0.05):
         """
         Finds the graph node closest to the given data-space coordinates.
-            :param x: X coordinate to test.
-            :type x: float
-            :param y: Y coordinate to test.
-            :type y: float
-            :param threshold: Maximum Euclidean distance to consider as a hit.
-            :type threshold: float
-            :return: The nearest node identifier, or None if no node is within threshold.
+
+        :param x: X coordinate to test.
+        :type x: float
+
+        :param y: Y coordinate to test.
+        :type y: float
+
+        :param threshold: Maximum Euclidean distance to consider as a hit.
+        :type threshold: float
+
+        :return: The nearest node identifier, or None if no node is within threshold.
         """
         min_dist = float('inf')
         nearest = None
@@ -1870,14 +1993,18 @@ class Graph(QObject):
         Finds the graph edge closest to the given data-space coordinates.
         Handles normal edges, bidirectional pairs (with perpendicular offset matching the draw convention), 
         and self-loops (sampled as circular arcs).
-            :param x: X coordinate to test.
-            :type x: float
-            :param y: Y coordinate to test.
-            :type y: float
-            :param threshold: Maximum distance to consider as a hit.
-            :type threshold: float
-            :return: The nearest edge as a (src, tgt) tuple, or None if none is within threshold.
-            :rtype: tuple or None
+
+        :param x: X coordinate to test.
+        :type x: float
+
+        :param y: Y coordinate to test.
+        :type y: float
+
+        :param threshold: Maximum distance to consider as a hit.
+        :type threshold: float
+
+        :return: The nearest edge as a (src, tgt) tuple, or None if none is within threshold.
+        :rtype: tuple or None
         """
         candidates = []
 
@@ -1957,10 +2084,13 @@ class Graph(QObject):
         Returns a stable canonical ordering for a bidirectional edge pair.
         For a pair (u, v) where both (u, v) and (v, u) exist in the graph, returns the sorted tuple so 
         that the canonical form is consistent regardless of which direction is queried first.
-            :param u: First node.
-            :param v: Second node.
-            :return: Canonically ordered edge tuple (smaller, larger), or (u, v) if not bidirectional.
-            :rtype: tuple
+
+        :param u: First node.
+
+        :param v: Second node.
+
+        :return: Canonically ordered edge tuple (smaller, larger), or (u, v) if not bidirectional.
+        :rtype: tuple
         """
         #STEP: Check if edge exists in both directions (bidirectional)
         if (u, v) in self.graph.edges() and (v, u) in self.graph.edges():
@@ -1972,10 +2102,12 @@ class Graph(QObject):
         Extracts data-space coordinates from a Matplotlib mouse event.
         Falls back to inverse-transform of widget coordinates if ``xdata``/``ydata``
         are not available directly (e.g., when the cursor is outside the axes).
-            :param event: The Matplotlib mouse event.
-            :type event: matplotlib.backend_bases.MouseEvent
-            :return: Tuple (x, y) in data coordinates, or (None, None) if unavailable.
-            :rtype: tuple[float | None, float | None]
+
+        :param event: The Matplotlib mouse event.
+        :type event: matplotlib.backend_bases.MouseEvent
+
+        :return: Tuple (x, y) in data coordinates, or (None, None) if unavailable.
+        :rtype: tuple[float | None, float | None]
         """
         #STEP: Use direct data coordinates if available (cursor is inside axes)
         if event.xdata is not None and event.ydata is not None:
@@ -1990,11 +2122,14 @@ class Graph(QObject):
         """
         Moves all selected nodes by the given delta and persists positions to the BooN model.
         Updates both the internal ``node_positions`` dictionary and the BooN's own position store (``boon.pos``) for symbolic and integer nodes.
-            :param dx: Horizontal displacement in data-space units.
-            :type dx: float
-            :param dy: Vertical displacement in data-space units.
-            :type dy: float
-            :return: None
+
+        :param dx: Horizontal displacement in data-space units.
+        :type dx: float
+
+        :param dy: Vertical displacement in data-space units.
+        :type dy: float
+
+        :return: None
         """
         #STEP: Abort if nothing is selected or graph is not initialised
         if not self.selected_nodes or self.graph is None:
@@ -2048,20 +2183,27 @@ class Graph(QObject):
         """
         Computes the minimum Euclidean distance from a point to a line segment.
         If the segment has zero length, returns the distance from the point to the segment's endpoint.
-            :param px: X coordinate of the test point.
-            :type px: float
-            :param py: Y coordinate of the test point.
-            :type py: float
-            :param x1: X coordinate of the segment start.
-            :type x1: float
-            :param y1: Y coordinate of the segment start.
-            :type y1: float
-            :param x2: X coordinate of the segment end.
-            :type x2: float
-            :param y2: Y coordinate of the segment end.
-            :type y2: float
-            :return: Perpendicular (or endpoint) distance from the point to the segment.
-            :rtype: float
+
+        :param px: X coordinate of the test point.
+        :type px: float
+
+        :param py: Y coordinate of the test point.
+        :type py: float
+
+        :param x1: X coordinate of the segment start.
+        :type x1: float
+
+        :param y1: Y coordinate of the segment start.
+        :type y1: float
+
+        :param x2: X coordinate of the segment end.
+        :type x2: float
+
+        :param y2: Y coordinate of the segment end.
+        :type y2: float
+
+        :return: Perpendicular (or endpoint) distance from the point to the segment.
+        :rtype: float
         """
         #STEP: Compute direction vector of segment
         dx = x2 - x1
@@ -2192,7 +2334,8 @@ class Graph(QObject):
         Opens the edge family color palette menu at the current mouse cursor position.
         Rebuilds the palette UI before displaying so that the icon states (show/hide family colors) 
         always reflect the current application state.
-            :return: None
+
+        :return: None
         """
         if not hasattr(self, "color_menu"):                                                             #Menu must be set-up before opened
             return
@@ -2318,7 +2461,8 @@ class Graph(QObject):
         Opens the node-size adjustment panel at the current mouse cursor position.
         The panel can be opened even without a selection because the 'All' mode operates on every node.
         A warning is shown only when the panel is actually used in 'Selected' mode with no node chosen.
-            :return: None
+
+        :return: None
         """
         if not hasattr(self, "resize_menu"):                                                       #Verify menu exists
             return
@@ -2330,14 +2474,16 @@ class Graph(QObject):
     def build_resize_palette(self):
         """
         Build the node-size adjustment UI inside the resize menu popup.
+                The panel contains:
 
-        The panel contains:
-          - A horizontal slider to set the size of the target node(s) continuously.
-          - A toggle switch (Selected / All) to apply the size to the selected node(s) or
-            uniformly to all nodes in the graph.
-          - A label-position icon button that switches the node name between Center and Top.
-            Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so
-            that the label offset is consistent across the graph.
+                - A horizontal slider to set the size of the target node(s) continuously.
+                - A toggle switch (Selected / All) to apply the size to the selected node(s) or
+                    uniformly to all nodes in the graph.
+                - A label-position icon button that switches the node name between Center and Top.
+                    Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so
+                    that the label offset is consistent across the graph.
+
+                :return: None
         """
         self.resize_menu.clear()
 
@@ -2346,20 +2492,20 @@ class Graph(QObject):
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(6)
 
-        # ── Title ──────────────────────────────────────────────────────────────
+        #STEP: Create panel title
         title_label = QLabel("Node Size")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
         layout.addWidget(title_label)
 
-        # ── Slider ─────────────────────────────────────────────────────────────
-        #Determine the initial slider value: average size of selected (or all) nodes
+        #STEP: Determine initial slider value from selected nodes
         if self.selected_nodes:
             ref_size = int(sum(self.node_sizes.get(n, self.NODE_SIZE_DEFAULT)
                                for n in self.selected_nodes) / len(self.selected_nodes))
         else:
             ref_size = self.NODE_SIZE_DEFAULT
 
+        #STEP: Create node-size slider
         slider = QSlider(Qt.Horizontal)
         slider.setMinimum(self.NODE_SIZE_DEFAULT)
         slider.setMaximum(self.NODE_SIZE_MAX)
@@ -2369,24 +2515,25 @@ class Graph(QObject):
         slider.setFixedWidth(180)
         slider.setToolTip("Drag to adjust node size")
 
-        #Label showing the current size value next to the slider
+        #STEP: Create current size display label
         size_value_label = QLabel(str(ref_size))
         size_value_label.setFixedWidth(36)
         size_value_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         size_value_label.setStyleSheet("font-size: 10px; color: #555555;")
 
-        #Disable slider immediately if already in Top mode (fixed offset requires default size)
+        #STEP: Disable controls when label position is set to Top
         _in_top_mode = getattr(self, "node_label_top", False)
         slider.setEnabled(not _in_top_mode)
         size_value_label.setEnabled(not _in_top_mode)
 
+        #STEP: Assemble slider row
         slider_row = QHBoxLayout()
         slider_row.setSpacing(6)
         slider_row.addWidget(slider)
         slider_row.addWidget(size_value_label)
         layout.addLayout(slider_row)
 
-        # ── Selected / All toggle ──────────────────────────────────────────────
+        #STEP: Create Selected/All application mode controls
         toggle_row = QHBoxLayout()
         toggle_row.setSpacing(6)
 
@@ -2395,7 +2542,7 @@ class Graph(QObject):
         toggle_row.addWidget(toggle_lbl)
 
         btn_selected = QPushButton("Selected")
-        btn_all      = QPushButton("All")
+        btn_all = QPushButton("All")
         for btn in (btn_selected, btn_all):
             btn.setCheckable(True)
             btn.setFixedHeight(24)
@@ -2404,11 +2551,12 @@ class Graph(QObject):
                 "QPushButton:checked { background-color: #4A90D9; color: white; border-color: #2E6DAD; }"
             )
 
-        #Persist the toggle state across palette rebuilds
+        #STEP: Restore previously selected resize mode
         _all_mode = getattr(self, "_resize_all_mode", False)
         btn_selected.setChecked(not _all_mode)
         btn_all.setChecked(_all_mode)
 
+        #STEP: Define resize mode handlers
         def _set_mode_selected():
             self._resize_all_mode = False
             btn_selected.setChecked(True)
@@ -2419,6 +2567,7 @@ class Graph(QObject):
             btn_selected.setChecked(False)
             btn_all.setChecked(True)
 
+        #STEP: Connect resize mode buttons
         btn_selected.clicked.connect(_set_mode_selected)
         btn_all.clicked.connect(_set_mode_all)
 
@@ -2427,7 +2576,7 @@ class Graph(QObject):
         toggle_row.addStretch()
         layout.addLayout(toggle_row)
 
-        # ── Slider value-change handler ────────────────────────────────────────
+        #STEP: Handle slider value changes
         def _on_slider_changed(value):
             """Apply the slider value to the target nodes and redraw."""
             size_value_label.setText(str(value))
@@ -2446,14 +2595,14 @@ class Graph(QObject):
 
         slider.valueChanged.connect(_on_slider_changed)
 
-        # ── Separator ──────────────────────────────────────────────────────────
+        #STEP: Add separator between resize and label settings
         sep = QFrame()
         sep.setFrameShape(QFrame.HLine)
         sep.setFrameShadow(QFrame.Sunken)
         sep.setStyleSheet("color: #cccccc;")
         layout.addWidget(sep)
 
-        # ── Label position icon button ─────────────────────────────────────────
+        #STEP: Create label-position controls
         label_pos_row = QHBoxLayout()
         label_pos_row.setSpacing(8)
 
@@ -2461,18 +2610,20 @@ class Graph(QObject):
         label_pos_title.setStyleSheet("font-size: 10px;")
         label_pos_row.addWidget(label_pos_title)
 
-        #Determine current state and build the toggle button
+        #STEP: Read current label-position state
         _label_top = getattr(self, "node_label_top", False)
 
+        #STEP: Create label-position toggle button
         label_pos_btn = QPushButton()
         label_pos_btn.setFixedSize(80, 28)
         label_pos_btn.setCheckable(True)
         label_pos_btn.setChecked(_label_top)
 
-        #Icon paths follow the same convention as ICON01 and family color icons
+        #STEP: Define label-position icons
         ICON_LABEL_CENTER = ":/icon/resources/center_name.svg"
         ICON_LABEL_TOP    = ":/icon/resources/top_name.svg"
 
+        #STEP: Update label-position button appearance
         def _update_label_pos_btn(is_top):
             """Refresh button icon/text and style to reflect the current label-position mode."""
             if is_top:
@@ -2501,9 +2652,9 @@ class Graph(QObject):
                     "QPushButton { font-size: 10px; border: 1px solid #aaa; border-radius: 3px; "
                     "background-color: #f0f0f0; color: #333; }"
                 )
-
         _update_label_pos_btn(_label_top)
 
+        #STEP: Handle label-position changes
         def _toggle_label_position(checked):
             """
             Switch node label position between Center and Top.
@@ -2526,12 +2677,13 @@ class Graph(QObject):
         label_pos_row.addStretch()
         layout.addLayout(label_pos_row)
 
+        #STEP: Add informational hint
         hint = QLabel("(Top resets all sizes to default)")
         hint.setStyleSheet("font-size: 9px; color: #999999; font-style: italic;")
         hint.setAlignment(Qt.AlignCenter)
         layout.addWidget(hint)
 
-        # ── Attach container to menu ───────────────────────────────────────────
+        #STEP: Attach panel widget to resize menu
         container.setLayout(layout)
         widget_action = QWidgetAction(self.resize_menu)
         widget_action.setDefaultWidget(container)
@@ -2542,7 +2694,8 @@ class Graph(QObject):
         Increases the display size of all currently selected nodes by one step.
         Node sizes cannot exceed NODE_SIZE_MAX.
         Redraws the graph and refreshes the resize palette to reflect the updated state.
-            :return: None
+
+        :return: None
         """
         if not self.selected_nodes:
             QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
@@ -2562,7 +2715,8 @@ class Graph(QObject):
         Decreases the display size of all currently selected nodes by one step.
         Size is floored at NODE_SIZE_DEFAULT.
         Redraws the graph and refreshes the resize palette to reflect the updated state.
-            :return: None
+
+        :return: None
         """
         if not self.selected_nodes:
             QMessageBox.warning(None, "No Selection", "Please select a node to resize.")
@@ -2605,9 +2759,11 @@ class Graph(QObject):
         """
         Wraps a node label at natural separators: _, -, /, :
         Only wraps if the label exceeds max_length characters. Each segment becomes a new line.
-            :param label: Original node label string.
-            :param max_length: Character threshold above which wrapping is applied.
-            :rtype: str
+
+        :param label: Original node label string.
+
+        :param max_length: Character threshold above which wrapping is applied.
+        :rtype: str
         """
         if len(label) <= max_length:                                                               #No wrap for short labels
             return label
@@ -2667,7 +2823,8 @@ class Network:
           positive sign  ->  positive module index (+k)  ->  literal = src
           negative sign  ->  negative module index (-k)  ->  literal = Not(src)
 
-        Example:
+        Example::
+
           x1->x2  pink   sign+1  -> module +1
           x3->x2  pink   sign-1  -> module -1  (same clause 1, negated literal)
           x4->x2  yellow sign+1  -> module +2  (separate clause 2)
@@ -2770,9 +2927,12 @@ class Network:
         Converts a BooN logical model back into a GUI graph representation.
         This method rebuilds nodes, edges, positions, labels, and visual properties from the BooN interaction 
         graph and updates the graph editor accordingly.
-            :param boon: BooN model to convert.
-            :param graph_editor: Target GUI graph editor to populate.
-            :return: None
+
+        :param boon: BooN model to convert.
+
+        :param graph_editor: Target GUI graph editor to populate.
+
+        :return: None
         """
         ig = boon.interaction_graph
 
@@ -2820,21 +2980,26 @@ class Help(QMainWindow):
     This class inherits from QMainWindow and is used to load and display an HTML-based
     help file using QWebEngineView. It provides a 'Close' button to dismiss the window.
     The layout and UI components are loaded from a .ui file.
-        :ivar CloseButton: The button widget used to close the help window.
-        :type CloseButton: QPushButton
-        :ivar web: A web engine view widget used to render and display the help HTML content.
-        :type web: QWebEngineView
-        :ivar WebContainer: The container widget to hold the QWebEngineView displaying the help content.
-        :type WebContainer: QWidget
+
+    :ivar CloseButton: The button widget used to close the help window.
+    :type CloseButton: QPushButton
+
+    :ivar web: A web engine view widget used to render and display the help HTML content.
+    :type web: QWebEngineView
+
+    :ivar WebContainer: The container widget to hold the QWebEngineView displaying the help content.
+    :type WebContainer: QWidget
     """
     def __init__(self, parent=None):
         super(Help, self).__init__(parent)                                                     #Initialize the parent class (QMainWindow)
-        loadUi('BooNGui/help.ui', self)                                                        #Load Qt designer .ui file for layout and widgets
+        help_ui = os.path.join(os.path.dirname(__file__), 'BooNGui', 'help.ui')
+        loadUi(help_ui, self)                                                                #Load Qt designer .ui file for layout and widgets
         self.setMinimumSize(QSize(600, 600))                                                   #Min size of help window
         self.CloseButton.clicked.connect(lambda _: self.close())                               #Close button from .ui file
         self.web = QWebEngineView(self)                                                        #Web browser like widget
         self.WebContainer.addWidget(self.web)                      
-        with open('BooNGui/Help.html', 'r') as f:                                              #Open local html file
+        help_html = os.path.join(os.path.dirname(__file__), 'BooNGui', 'Help.html')
+        with open(help_html, 'r') as f:                                                      #Open local html file
             html = f.read()
             self.web.setHtml(html)                                                             #Load html into web view
 
@@ -2842,29 +3007,30 @@ class Help(QMainWindow):
 
 class View(QDialog):
     """
-    Represents a dialog interface for managing and displaying Boolean formulas in a tabular format. 
-    The interface supports operations like editing, validating, and converting Boolean formulas, and dynamically 
-    updates the view accordingly.
-    This class is designed to be a standalone dialog that integrates with a parent component, using its logical 
-    formulas and variables for display and interaction.
-        :ivar style: Style of the formulas displayed in the view.
-        :type style: str
-        :ivar parent: Reference to the parent entity using this view, typically the Boonify class, which 
-        contains the necessary logical formulas and variables.
-        :type parent: object
-        :ivar formulas: List of formula input fields linked to variables.
-            Each field corresponds to a row in the table, allowing live editing of formulas.
-        :type formulas: list[QLineEdit]
+    Dialog showing Boolean formulas in a table, allowing editing, validation and conversions.
+
+    Integrates with a parent `Boonify` instance to obtain formulas and variables for display.
+
+    :ivar style: Style of the formulas displayed in the view.
+    :type style: str
+
+    :ivar parent: Reference to the parent `Boonify` instance.
+    :type parent: object
+
+    :ivar formulas: List of formula input fields linked to variables.
+    :type formulas: list[QLineEdit]
     """
     def __init__(self, parent=None):
         """
         Initializes the View dialog, loads the UI layout, sets up signal connections, and populates the formula 
         table for the current BooN.
-            :param parent: The parent Boonify instance providing BooN data.
-            :type parent: Boonify or None
+
+        :param parent: The parent Boonify instance providing BooN data.
+        :type parent: Boonify or None
         """
         super(View, self).__init__(parent)                                                      #Initialize parent class (QDialog)
-        loadUi('BooNGui/view.ui', self)             
+        view_ui = os.path.join(os.path.dirname(__file__), 'BooNGui', 'view.ui')
+        loadUi(view_ui, self)
         self.setGeometry(300, 300, 750, 500)                                                    #Set size and position of view window
         self.style = LOGICAL                                                                    #Style of the formulas, by default: logical
         self.parent = parent                                                                    #Parent = Boonify class
@@ -2936,7 +3102,8 @@ class View(QDialog):
         variables involved, and updates the associated BooN data structure if the formula passes all checks. 
         It also refreshes related components to reflect the changes.
         In case of errors, appropriate error messages are displayed to the user.
-            :return: None
+
+        :return: None
         """
         row = self.BooNContent.currentRow()                                                     #Get the current modified row
         text = self.formulas[row].text()                                                        #Get the text of the line edit formula
@@ -2964,7 +3131,8 @@ class View(QDialog):
     def cb_styling(self):
         """
         Updates the current styling for the component based on the selected style and refreshes the view.
-            :return: None
+
+        :return: None
         """
         self.style = STYLE[self.Style.currentText()]                                            #Apply new selected display style
         self.initialize_view()                                                                  #Refresh the view with new style applied
@@ -2973,7 +3141,8 @@ class View(QDialog):
         """
         Converts the current BooNn into Disjunctive Normal Form (DNF)
         and refreshes the view accordingly.
-            :return: None
+
+        :return: None
         """
         try:
             #STEP: Pre-parse any string formulas to ensure they are symbolic expressions
@@ -2998,18 +3167,22 @@ class StableStates(QDialog):
     This class represents a graphical interface for visualizing stable states of a Boolean network model. 
     It allows users to switch between different display styles, such as icons or textual representation, 
     for better interpretation of the stable states.
-        :ivar parent: Reference to the parent widget or application component.
-        :type parent: QWidget
-        :ivar style: The display style for representing stable states (e.g., 'Icon Boolean').
-        :type style: str
-        :ivar datamodel: The data model used for organizing and displaying stable states.
-        :type datamodel: QStandardItemModel
+
+    :ivar parent: Reference to the parent widget or application component.
+    :type parent: QWidget
+
+    :ivar style: The display style for representing stable states (e.g., 'Icon Boolean').
+    :type style: str
+
+    :ivar datamodel: The data model used for organizing and displaying stable states.
+    :type datamodel: QStandardItemModel
     """
     def __init__(self, parent=None):
 
         #STEP: initialize parent class (QDialog)
         super(StableStates, self).__init__(parent)
-        loadUi('BooNGui/stablestates.ui', self)
+        stables_ui = os.path.join(os.path.dirname(__file__), 'BooNGui', 'stablestates.ui')
+        loadUi(stables_ui, self)
         self.setGeometry(300, 300, 500, 700)
         self.parent = parent
         self.style = 'Icon Boolean'                                                             #Default display style
@@ -3027,7 +3200,8 @@ class StableStates(QDialog):
         """
         Updates the formula display style and refreshes the view.
         This method changes how formulas are rendered (logical, Python, etc.) based on user selection.
-            :return: None
+
+        :return: None
         """
         self.style = self.Style.currentText()                                                   #Change the display style
         self.stablestates()                                                                     #Update stable states view with applied style
@@ -3039,7 +3213,8 @@ class StableStates(QDialog):
         structure using a Qt `QStandardItemModel`. Each row represents a variable, and each column corresponds 
         to a stable state. The presentation style of the data (e.g., icons, boolean values, or integers) is
         determined by the specified `style` attribute of the object.
-            :return: None
+
+        :return: None
         """
         theboon = self.parent.boon                                                              #Get current BooN of parent
         variables = theboon.variables                                                           #List of variables names in the model
@@ -3083,24 +3258,30 @@ class StableStates(QDialog):
 class Model(QMainWindow):
     """
     A Model class for managing and visualizing network dynamics using a GUI interface.
-        :ivar parent: Reference to the parent window or application.
-        :type parent: Any
-        :ivar mode: Represents the selected mode of dynamics (asynchronous or synchronous).
-        :type mode: Enum or equivalent
-        :ivar layout: Defines the network layout function to be used for visualization.
-        :type layout: Callable
-        :ivar canvas: Matplotlib widget for rendering the network visualization.
-        :type canvas: matplotlib.backends.backend_qt5agg.FigureCanvas
+
+    :ivar parent: Reference to the parent window or application.
+    :type parent: Any
+
+    :ivar mode: Represents the selected mode of dynamics (asynchronous or synchronous).
+    :type mode: Enum or equivalent
+
+    :ivar layout: Defines the network layout function to be used for visualization.
+    :type layout: Callable
+
+    :ivar canvas: Matplotlib widget for rendering the network visualization.
+    :type canvas: matplotlib.backends.backend_qt5agg.FigureCanvas
     """
     def __init__(self, parent=None):
         """
         Initializes the Model window, loads the UI layout, connects radio buttons and the layout combo box, 
         and renders the initial dynamics model.
-            :param parent: The parent Boonify instance providing BooN data.
-            :type parent: Boonify or None
+
+        :param parent: The parent Boonify instance providing BooN data.
+        :type parent: Boonify or None
         """
         super(Model, self).__init__(parent)
-        loadUi('BooNGui/model.ui', self)
+        model_ui = os.path.join(os.path.dirname(__file__), 'BooNGui', 'model.ui')
+        loadUi(model_ui, self)
         self.setGeometry(300, 300, 600, 600)
         self.CloseButton.clicked.connect(lambda _: self.close())
 
@@ -3127,7 +3308,8 @@ class Model(QMainWindow):
         Determine and set the mode of operation based on user selection from the interface. This function checks the state
         of radio buttons to assign either an asynchronous or synchronous mode. The established mode is then used for
         further modeling via a further call to the `modeling` method.
-            :return: None
+
+        :return: None
         """
         #STEP: Read the selected radio button and update the dynamics mode
         if self.AsynchronousButton.isChecked():
@@ -3143,7 +3325,8 @@ class Model(QMainWindow):
         Adjusts the network layout based on the selected option and applies the corresponding layout algorithm to the network. 
         The method retrieves the currently selected network layout from a user interface component, maps it to an appropriate algorithm, and configures 
         the network's visualization layout accordingly. It also invokes an update via the `modeling` method to apply and reflect the changes.
-            :rtype: None
+
+        :return: None
         """
         #STEP: Map the selected layout name to its corresponding NetworkX/BooN function
         layout = self.NetworkLayout.currentText()
@@ -3165,7 +3348,8 @@ class Model(QMainWindow):
     def modeling(self):
         """
         Compute the model of dynamics.
-            return: None
+
+        :return: None
         """
         #STEP: Clear the axes and compute the dynamics model
         self.canvas.axes.clear()
@@ -3188,16 +3372,20 @@ class Controllability(QMainWindow):
     This class is responsible for initializing the controllability user interface, handling the interactions 
     between destiny and observers tables, computing control actions based on user selections, and managing the 
     graphical representation of these actions.
-        :ivar parent: Parent window instance for the controllability widget.
-        :type parent: QWidget
-        :ivar actions: Stores the calculated control actions, if any.
-        :type actions: list or None
-        :ivar row: Index of the currently selected solution in control actions, if applicable.
-        :type row: int or None
+
+    :ivar parent: Parent window instance for the controllability widget.
+    :type parent: QWidget
+
+    :ivar actions: Stores the calculated control actions, if any.
+    :type actions: list or None
+
+    :ivar row: Index of the currently selected solution in control actions, if applicable.
+    :type row: int or None
     """
     def __init__(self, parent=None):
         super(Controllability, self).__init__(parent)
-        loadUi('BooNGui/controllability.ui', self)
+        controllability_ui = os.path.join(os.path.dirname(__file__), 'BooNGui', 'controllability.ui')
+        loadUi(controllability_ui, self)
         self.setGeometry(900, 300, 800, 600)
         self.parent = parent
         self.actions = None                                                                 #Current control actions
@@ -3207,9 +3395,8 @@ class Controllability(QMainWindow):
     def initialize_controllability(self):
         """
         Initialize the controllability setup for the application.
-            :param self: The class instance on which this method is invoked.
-            :type self: Any
-            :return: None
+
+        :return: None
         """
         theboon = self.parent.boon
         variables = theboon.variables
@@ -3276,12 +3463,13 @@ class Controllability(QMainWindow):
 
     def destiny_to_observers(self, label: str):
         """
-        Updates the check state of an item in the `Observers` table based on the provided label and the currently 
+        Updates the check state of an item in the `Observers` table based on the provided label and the currently
         selected row in the `Destiny` table.
-            :param label: A string indicating the check state condition. 
-                If the label is `"None"`, the item is unchecked; otherwise, it is checked.
-            :type label: str
-            :return: None
+
+        :param label: If "None", the item is unchecked; otherwise it is checked.
+        :type label: str
+
+        :return: None
         """
         row = self.Destiny.currentRow()
         item = self.Observers.item(row, 0)
@@ -3296,9 +3484,11 @@ class Controllability(QMainWindow):
         """
         Synchronizes the Destiny table when an observer checkbox is unchecked.
         When a variable is unchecked in the Observers table, its corresponding entry in the Destiny table is reset to "None".
-            :param chkitem: The table item whose check state changed.
-            :type chkitem: QTableWidgetItem
-            :return: None
+
+        :param chkitem: The table item whose check state changed.
+        :type chkitem: QTableWidgetItem
+
+        :return: None
         """
         row = chkitem.row()
 
@@ -3313,7 +3503,8 @@ class Controllability(QMainWindow):
         by the BooN model. The method determines the applicable control actions by analyzing a user-specified query defining 
         the desired or undesired state, along with the possible variables that can be controlled. This process involves 
         interpreting various parameters such as observer states, query types, and logical modalities.
-            :return: None
+
+        :return: None
         """
         self.row = None
         theboon = self.parent.boon
@@ -3375,7 +3566,8 @@ class Controllability(QMainWindow):
         """
         Build the Qt tree model from self.actions and update ControlActions.
         Connected to Threader.finished so it always runs on the main thread.
-            :return: None
+
+        :return: None
         """
         #STEP: Rebuild the tree model from self.actions on the main thread
         treemodel = QStandardItemModel(0, 2)                                                #Add 2 columns: Variable + Boolean value
@@ -3408,7 +3600,8 @@ class Controllability(QMainWindow):
     def select_action(self, arg):
         """
         Keep the selection solution
-            return: None
+
+        :return: None
         """
         #STEP: Record the selected solution index (parent row for child items, own row for root items)
         self.row = arg.parent().row() if arg.parent().row() > -1 else arg.row()
@@ -3416,7 +3609,8 @@ class Controllability(QMainWindow):
     def actupon(self):
         """
         Apply the selection actions on the BooN.
-            return: None
+
+        :return: None
         """
         #STEP: Apply each control action of the selected solution to the BooN descriptor
         if self.row is not None and self.actions:
@@ -3435,37 +3629,43 @@ class Controllability(QMainWindow):
 #DEF: Threading utility
 class Threader(QObject):
     """
-    Threader class for managing application execution within a separate thread. 
-    This class is designed to separate the execution of a provided application function into its own thread using 
-    PyQt's threading mechanism. The class provides functionality to start, switch, and terminate the application
+    Threader class for managing application execution within a separate thread.
+
+    This class is designed to separate the execution of a provided application
+    function into its own thread using PyQt's threading mechanism. The class
+    provides functionality to start, switch, and terminate the application
     running within the thread effectively.
-        :ivar finished: Signal emitted when the thread's application completes execution.
-        :ivar app: The callable application to be executed within the thread.
-        :type app: Callable
-        :ivar thread: The QThread instance used to run the application in a separate thread.
-        :type thread: QThread
+
+    :ivar finished: Signal emitted when the thread's application completes execution.
+    :ivar app: The callable application to be executed within the thread.
+    :type app: Callable
+
+    :ivar thread: The QThread instance used to run the application in a separate thread.
+    :type thread: QThread
     """
     finished = pyqtSignal()
 
     def __init__(self, app=lambda: None):
         """
         Represents a custom asynchronous functionality encapsulated in a QThread.
-        This class initializes with a callable app function, assigns it to an internal property, and starts 
-        a new thread for its execution.
+        This class initializes with a callable app function, assigns it to an internal
+        property, and starts a new thread for its execution.
+
         Attributes:
             app (Callable[[], Any]): A callable function assigned to the class instance.
             thread (QThread): The thread in which the object operates.
-            :param app: A callable function that serves as the application's main function.
-                Defaults to a no-op lambda function.
-            :type app: Callable[[], Any]
+
+        :param app: A callable function that serves as the application's main function.
+            Defaults to a no-op lambda function.
+
+        :type app: Callable[[], Any]
         """
         super().__init__()
         self.app = app
 
-        #STEP: Create and start the background thread, wiring it to run()
+        # Create the thread
         self.thread = QThread()
-        self.thread.started.connect(self.run)                                               #Trigger run() when the thread starts
-        self.moveToThread(self.thread)                                                      #Move this QObject to the new thread
+        self.moveToThread(self.thread)
         self.thread.start()
 
     def run(self):
@@ -3483,8 +3683,10 @@ class Threader(QObject):
         """
         Handles the application of a given app instance to a particular object by assigning the provided 
         app to the instance attribute.
-            :param app: The application instance to be applied.
-            :return: None
+
+        :param app: The application instance to be applied.
+
+        :return: None
         """
         self.app = app                                                                      #Replace current callable with new one
 
@@ -3492,7 +3694,8 @@ class Threader(QObject):
         """
         Attempts to terminate the thread execution in an orderly manner. This method leverages the `quit` function of 
         the thread instance to signal and ensure termination of its event loop.
-            :return: None
+
+        :return: None
         """
         #STEP: Signal the thread to stop and block until it finishes
         self.thread.quit()

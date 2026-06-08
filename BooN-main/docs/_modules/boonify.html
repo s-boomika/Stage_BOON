@@ -149,36 +149,51 @@
 <span class="sd">    Provides a GUI with a comprehensive set of functionalities. This class is primarily responsible for initializing</span>
 <span class="sd">    and connecting GUI widgets, setting up callbacks, and constructing an editable graph</span>
 <span class="sd">    for network interaction design.</span>
-<span class="sd">        :ivar boon: The current Boolean Network object being managed or displayed.</span>
-<span class="sd">        :type boon: BooN</span>
-<span class="sd">        :ivar filename: The name of the file associated with the current BooN (empty if no file is loaded or saved).</span>
-<span class="sd">        :type filename: str</span>
-<span class="sd">        :ivar history: Maintains a history list of BooN objects for undo/redo functionalities.</span>
-<span class="sd">        :type history: list</span>
-<span class="sd">        :ivar hindex: The index of the last BooN added to the history.</span>
-<span class="sd">        :type hindex: int</span>
-<span class="sd">        :ivar hupdate: Flag indicating whether the history should be updated.</span>
-<span class="sd">        :type hupdate: bool</span>
-<span class="sd">        :ivar saved: Flag indicating if the current BooN has been saved.</span>
-<span class="sd">        :type saved: bool</span>
-<span class="sd">        :ivar QView: Widget for displaying BooN visualization.</span>
-<span class="sd">        :type QView: QWidget | None</span>
-<span class="sd">        :ivar QStableStates: Widget for displaying stable states of BooNs.</span>
-<span class="sd">        :type QStableStates: QWidget | None</span>
-<span class="sd">        :ivar QModel: Widget for displaying the dynamic model of the BooN.</span>
-<span class="sd">        :type QModel: QWidget | None</span>
-<span class="sd">        :ivar QControllability: Widget for displaying BooN controllability analysis.</span>
-<span class="sd">        :type QControllability: QWidget | None</span>
-<span class="sd">        :ivar editgraph: Editable graphical representation of the BooN&#39;s interaction graph.</span>
-<span class="sd">        :type editgraph: EditableGraph | None</span>
-<span class="sd">        :ivar disablecallback: Flag indicating whether design callbacks are disabled.</span>
-<span class="sd">        :type disablecallback: bool</span>
-<span class="sd">        :ivar designsize: Scaling factor related to graphics elements in the EditableGraph.</span>
-<span class="sd">        :type designsize: float</span>
-<span class="sd">        :ivar worker: Background thread for processing long-running BooN operations.</span>
-<span class="sd">        :type worker: Threader</span>
-<span class="sd">        :ivar canvas: Matplotlib canvas for rendering the network design figure in the GUI.</span>
-<span class="sd">        :type canvas: FigureCanvas</span>
+
+<span class="sd">    :ivar boon: The current Boolean Network object being managed or displayed.</span>
+<span class="sd">    :type boon: BooN</span>
+
+<span class="sd">    :ivar filename: The name of the file associated with the current BooN (empty if no file is loaded or saved).</span>
+<span class="sd">    :type filename: str</span>
+
+<span class="sd">    :ivar history: Maintains a history list of BooN objects for undo/redo functionalities.</span>
+<span class="sd">    :type history: list</span>
+
+<span class="sd">    :ivar hindex: The index of the last BooN added to the history.</span>
+<span class="sd">    :type hindex: int</span>
+
+<span class="sd">    :ivar hupdate: Flag indicating whether the history should be updated.</span>
+<span class="sd">    :type hupdate: bool</span>
+
+<span class="sd">    :ivar saved: Flag indicating if the current BooN has been saved.</span>
+<span class="sd">    :type saved: bool</span>
+
+<span class="sd">    :ivar QView: Widget for displaying BooN visualization.</span>
+<span class="sd">    :type QView: QWidget | None</span>
+
+<span class="sd">    :ivar QStableStates: Widget for displaying stable states of BooNs.</span>
+<span class="sd">    :type QStableStates: QWidget | None</span>
+
+<span class="sd">    :ivar QModel: Widget for displaying the dynamic model of the BooN.</span>
+<span class="sd">    :type QModel: QWidget | None</span>
+
+<span class="sd">    :ivar QControllability: Widget for displaying BooN controllability analysis.</span>
+<span class="sd">    :type QControllability: QWidget | None</span>
+
+<span class="sd">    :ivar editgraph: Editable graphical representation of the BooN&#39;s interaction graph.</span>
+<span class="sd">    :type editgraph: EditableGraph | None</span>
+
+<span class="sd">    :ivar disablecallback: Flag indicating whether design callbacks are disabled.</span>
+<span class="sd">    :type disablecallback: bool</span>
+
+<span class="sd">    :ivar designsize: Scaling factor related to graphics elements in the EditableGraph.</span>
+<span class="sd">    :type designsize: float</span>
+
+<span class="sd">    :ivar worker: Background thread for processing long-running BooN operations.</span>
+<span class="sd">    :type worker: Threader</span>
+
+<span class="sd">    :ivar canvas: Matplotlib canvas for rendering the network design figure in the GUI.</span>
+<span class="sd">    :type canvas: FigureCanvas</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1">#DEF: Main Window Initialization</span>
@@ -313,6 +328,7 @@
 
 <span class="sd">        Converts the current graph representation into a BooN object, records the change in the history,</span>
 <span class="sd">        and refreshes all open views.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">disablecallback</span><span class="p">:</span>                                                                <span class="c1">#Ignore graph_changed signals fired during undo/redo or history updates</span>
@@ -336,6 +352,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Connect internal application signals to their corresponding handlers.</span>
 <span class="sd">        If the graph editor has already been created, connect its `graph_changed` signal to the synchronization callback.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Connect graph editor notifications to the BooN synchronization handler</span>
@@ -351,6 +368,7 @@
 <span class="sd">        Opens a file using a file dialog, loads its contents, and updates the application state.</span>
 <span class="sd">        Presents a file dialog filtered to .boon files. After a successful selection, loads the BooN,</span>
 <span class="sd">        refreshes all open views, reinitializes the graph editor, and resets the undo/redo history.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Open file&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;Boon Files (*.boon);; All Files (*);;&quot;</span><span class="p">)</span>
@@ -370,6 +388,7 @@
 <span class="sd">        Saves the current BooN to the existing file, or delegates to saveas() if no file is set.</span>
 <span class="sd">        If self.filename is already defined, the BooN is saved in place and the saved-state indicator is updated. </span>
 <span class="sd">        If no filename exists yet (e.g. new unsaved network), the Save As dialog is opened.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">:</span>
@@ -386,6 +405,7 @@
 <span class="sd">        Opens a Save As dialog and saves the current BooN to the chosen file.</span>
 <span class="sd">        Updates self.filename with the selected path and refreshes the saved-state indicator.</span>
 <span class="sd">        Does nothing if the dialog is cancelled.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="n">QFileDialog</span><span class="o">.</span><span class="n">getSaveFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Save&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;Boon Files (*.boon);; All Files (*);;&quot;</span><span class="p">)</span>
@@ -403,6 +423,7 @@
 <span class="sd">        Supported formats are BoolNet (.bnet), Python/SymPy (.txt), and SBML (.sbml, .xml).</span>
 <span class="sd">        After a successful import, self.filename is set to None because the BooN is not stored in the native .boon format. </span>
 <span class="sd">        All open views are refreshed and the history is reset. An error dialog is shown if the file extension isn&#39;t recognised.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="n">QFileDialog</span><span class="o">.</span><span class="n">getOpenFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Import from files&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;Text or SBML Files (*.bnet *.txt *.xml *.sbml);; All Files (*);;&quot;</span><span class="p">)</span>
@@ -433,6 +454,7 @@
 <span class="sd">        Exports the current BooN to an external file format via a Save dialog.</span>
 <span class="sd">        Supported formats are BoolNet (.bnet) and Python/SymPy (.txt). </span>
 <span class="sd">        The export format is determined automatically from the chosen file extension.</span>
+
 <span class="sd">        :raises ValueError: If the filename extension is unsupported or invalid.</span>
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -458,6 +480,7 @@
 <span class="sd">        Terminates the application, prompting the user to save if there are unsaved changes.</span>
 <span class="sd">        If the BooN is already saved, the application exits immediately. Otherwise a dialog</span>
 <span class="sd">        offers three choices: Save then quit, Quit without saving, or Cancel.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Exit directly if there are no unsaved changes.</span>
@@ -496,8 +519,10 @@
 <span class="sd">        This method ensures that when the application&#39;s close event is triggered, it invokes the quit method to handle </span>
 <span class="sd">        quitting properly. The `event.ignore()` ensures that the close event is ignored unless the application is closed </span>
 <span class="sd">        successfully prior to that, in which case `event.ignore()` will not execute.</span>
+
 <span class="sd">        :param event: The Qt close event triggered when the user closes the window.</span>
 <span class="sd">        :type event: QCloseEvent</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
@@ -511,10 +536,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Resets both BooN history and color history, then records the current state as the first entry.</span>
 <span class="sd">        Called after loading or importing a file to start a fresh undo/redo stack from the new state.</span>
-<span class="sd">        :ivar history: BooN snapshot list, size HSIZE.</span>
-<span class="sd">        :ivar color_history: edge_family_colors snapshot list, size HSIZE (parallel to history).</span>
-<span class="sd">        :ivar hindex: Current position in both history lists.</span>
-<span class="sd">        :ivar hupdate: Flag indicating whether a new entry was recorded, set to False after reset.</span>
+<span class="sd">        Resets ``history``, ``color_history``, ``hindex``, and ``hupdate`` to their initial values.</span>
+
+<span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">HSIZE</span>                                       <span class="c1">#Clear all BooN snapshots from history</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">color_history</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">HSIZE</span>                                 <span class="c1">#Clear all edge_family_colors snapshots from color history</span>
@@ -531,6 +555,7 @@
 <span class="sd">        Restores the previous BooN and edge family colors from the parallel history stacks.</span>
 <span class="sd">        Moves the history cursor one step back. Edge colors are restored before setup_design so the graph redraw </span>
 <span class="sd">        immediately uses the correct color state. Does nothing if the previous slot is empty (ex: beginning of history).</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hindex</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hindex</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">HSIZE</span>                                  <span class="c1">#Compute the previous history index</span>
@@ -556,6 +581,7 @@
 <span class="sd">        Moves the history cursor one step forward. Edge colors are restored before setup_design</span>
 <span class="sd">        so the graph redraw immediately uses the correct color state.</span>
 <span class="sd">        Does nothing if the next slot is empty (i.e. the top of history is reached).</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hindex</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hindex</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">HSIZE</span>                                  <span class="c1">#Compute the next history index</span>
@@ -586,6 +612,7 @@
 
 <span class="sd">            BooN equality is based on descriptors only (see ``BooN.__eq__``).</span>
 <span class="sd">            Color-only changes do NOT create a new entry here: use add_color_history() for those.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">hindex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hindex</span>
@@ -614,6 +641,7 @@
 <span class="sd">        when the BooN descriptor itself has not changed.</span>
 <span class="sd">        A new slot is created only if the color dict actually differs from the last recorded snapshot,</span>
 <span class="sd">        so selecting the same color twice produces only one history entry.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">current_colors</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph_editor</span><span class="p">,</span> <span class="s2">&quot;edge_family_colors&quot;</span><span class="p">,</span> <span class="p">{}))</span>
@@ -642,6 +670,7 @@
 <span class="sd">        and rendering logic using a tabulated structure. The current history index is highlighted, and </span>
 <span class="sd">        associated data details are presented using a plain tabular format. If a history entry lacks data,</span>
 <span class="sd">        it displays a placeholder.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">view</span> <span class="o">=</span> <span class="p">[]</span>
@@ -661,6 +690,7 @@
 <span class="sd">        Refreshes all visible components, such as BooN View, Stable States View, Model View, and Controllability</span>
 <span class="sd">        View. Each visible component is reinitialized or updated via its relevant function. This ensures that </span>
 <span class="sd">        all active components reflect the most current state.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">QView</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">QView</span><span class="o">.</span><span class="n">isVisible</span><span class="p">():</span>                           <span class="c1">#Refresh the BooN View if opened.</span>
@@ -679,6 +709,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">help</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Provides functionality to call and display help using an external Help object.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">thehelp</span> <span class="o">=</span> <span class="n">Help</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -691,6 +722,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Opens the BooN View window, which displays the Boolean equations of the current network.</span>
 <span class="sd">        The instance is stored in self.QView so that refresh() can update it while it is open.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">QView</span> <span class="o">=</span> <span class="n">View</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -703,6 +735,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Opens the Stable States window, which computes and displays the stable states of the current BooN.</span>
 <span class="sd">        The instance is stored in self.QStableStates so that refresh() can update it while it is open.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">QStableStates</span> <span class="o">=</span> <span class="n">StableStates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -716,6 +749,7 @@
 <span class="sd">        Opens the Dynamical Model window, which draws the state-transition graph of the current BooN.</span>
 <span class="sd">        Refused if the number of variables exceeds MODELBOUND, since the state space grows as 2^n</span>
 <span class="sd">        and the graph would be too large to render.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">boon</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MODELBOUND</span><span class="p">:</span>
@@ -731,6 +765,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Opens the Controllability window, which computes control actions to drive the BooN toward a target marking profile.</span>
 <span class="sd">        The instance is stored in self.QControllability so that refresh() can update it while it is open.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">QControllability</span> <span class="o">=</span> <span class="n">Controllability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -744,8 +779,10 @@
 <span class="sd">        Displays a flag in the status bar indicating whether the data has been saved. </span>
 <span class="sd">        A large empty circle (○) means the BooN is saved; a large filled circle (⬤) means it has unsaved changes. </span>
 <span class="sd">        Also updates self.saved so that quit() can check the state consistently.</span>
+
 <span class="sd">        :param val: True if the BooN is saved, False if it has unsaved changes. Defaults to True.</span>
 <span class="sd">        :type val: bool</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">NOTSAVED</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\u2B24</span><span class="s1">&#39;</span>                                            <span class="c1">#Large black/filled circle: unsaved changes</span>
@@ -768,46 +805,66 @@
 <span class="sd">    a Matplotlib canvas embedded in the PyQt5 GUI.</span>
 <span class="sd">    Handles node/edge creation, deletion, renaming, selection, dragging, zooming, edge sign toggling, </span>
 <span class="sd">    family color assignment, and self-loop rendering.</span>
-<span class="sd">        :ivar canvas: The Matplotlib canvas used for rendering the graph.</span>
-<span class="sd">        :type canvas: FigureCanvas</span>
-<span class="sd">        :ivar axes: The Matplotlib axes used for drawing.</span>
-<span class="sd">        :type axes: matplotlib.axes.Axes</span>
-<span class="sd">        :ivar graph: The directed graph storing nodes and edges.</span>
-<span class="sd">        :type graph: networkx.DiGraph</span>
-<span class="sd">        :ivar node_positions: Dictionary mapping node IDs to (x, y) coordinates.</span>
-<span class="sd">        :type node_positions: dict</span>
-<span class="sd">        :ivar node_labels: Dictionary mapping node IDs to their display labels.</span>
-<span class="sd">        :type node_labels: dict</span>
-<span class="sd">        :ivar next_node_id: Counter for assigning unique integer IDs to new nodes.</span>
-<span class="sd">        :type next_node_id: int</span>
-<span class="sd">        :ivar edge_colors: Mapping from edge (u, v) to RGB display color.</span>
-<span class="sd">        :type edge_colors: dict</span>
-<span class="sd">        :ivar edge_labels: Mapping from edge (u, v) to its display label.</span>
-<span class="sd">        :type edge_labels: dict</span>
-<span class="sd">        :ivar edge_modules: Mapping from edge (u, v) to its BooN module set.</span>
-<span class="sd">        :type edge_modules: dict</span>
-<span class="sd">        :ivar default_edge_sign: Default sign for newly created edges (+1 or -1).</span>
-<span class="sd">        :type default_edge_sign: int</span>
-<span class="sd">        :ivar selected_nodes: Set of currently selected node IDs.</span>
-<span class="sd">        :type selected_nodes: set</span>
-<span class="sd">        :ivar selected_edge: Currently selected edge as (src, tgt), or None.</span>
-<span class="sd">        :type selected_edge: tuple or None</span>
-<span class="sd">        :ivar zoom_factor: Current zoom level multiplier.</span>
-<span class="sd">        :type zoom_factor: float</span>
-<span class="sd">        :ivar edge_family_colors: Mapping from edge (u, v) to its family RGB color.</span>
-<span class="sd">        :type edge_family_colors: dict</span>
-<span class="sd">        :ivar show_family_colors: Whether to render family color markers on edges.</span>
-<span class="sd">        :type show_family_colors: bool</span>
-<span class="sd">        :ivar graph_changed: Qt signal emitted whenever the graph topology changes.</span>
-<span class="sd">        :type graph_changed: pyqtSignal</span>
-<span class="sd">        :ivar NODE_SIZE_DEFAULT: Default (and minimum) node size in Matplotlib units.</span>
-<span class="sd">        :type NODE_SIZE_DEFAULT: int</span>
-<span class="sd">        :ivar NODE_SIZE_MAX: Maximum allowed node size.</span>
-<span class="sd">        :type NODE_SIZE_MAX: int</span>
-<span class="sd">        :ivar NODE_SIZE_STEP: Size increment/decrement step.</span>
-<span class="sd">        :type NODE_SIZE_STEP: int</span>
-<span class="sd">        :ivar node_sizes: Per-node size overrides; absent key falls back to NODE_SIZE_DEFAULT.</span>
-<span class="sd">        :type node_sizes: dict</span>
+
+<span class="sd">    :ivar canvas: The Matplotlib canvas used for rendering the graph.</span>
+<span class="sd">    :type canvas: FigureCanvas</span>
+
+<span class="sd">    :ivar axes: The Matplotlib axes used for drawing.</span>
+<span class="sd">    :type axes: matplotlib.axes.Axes</span>
+
+<span class="sd">    :ivar graph: The directed graph storing nodes and edges.</span>
+<span class="sd">    :type graph: networkx.DiGraph</span>
+
+<span class="sd">    :ivar node_positions: Dictionary mapping node IDs to (x, y) coordinates.</span>
+<span class="sd">    :type node_positions: dict</span>
+
+<span class="sd">    :ivar node_labels: Dictionary mapping node IDs to their display labels.</span>
+<span class="sd">    :type node_labels: dict</span>
+
+<span class="sd">    :ivar next_node_id: Counter for assigning unique integer IDs to new nodes.</span>
+<span class="sd">    :type next_node_id: int</span>
+
+<span class="sd">    :ivar edge_colors: Mapping from edge (u, v) to RGB display color.</span>
+<span class="sd">    :type edge_colors: dict</span>
+
+<span class="sd">    :ivar edge_labels: Mapping from edge (u, v) to its display label.</span>
+<span class="sd">    :type edge_labels: dict</span>
+
+<span class="sd">    :ivar edge_modules: Mapping from edge (u, v) to its BooN module set.</span>
+<span class="sd">    :type edge_modules: dict</span>
+
+<span class="sd">    :ivar default_edge_sign: Default sign for newly created edges (+1 or -1).</span>
+<span class="sd">    :type default_edge_sign: int</span>
+
+<span class="sd">    :ivar selected_nodes: Set of currently selected node IDs.</span>
+<span class="sd">    :type selected_nodes: set</span>
+
+<span class="sd">    :ivar selected_edge: Currently selected edge as (src, tgt), or None.</span>
+<span class="sd">    :type selected_edge: tuple or None</span>
+
+<span class="sd">    :ivar zoom_factor: Current zoom level multiplier.</span>
+<span class="sd">    :type zoom_factor: float</span>
+
+<span class="sd">    :ivar edge_family_colors: Mapping from edge (u, v) to its family RGB color.</span>
+<span class="sd">    :type edge_family_colors: dict</span>
+
+<span class="sd">    :ivar show_family_colors: Whether to render family color markers on edges.</span>
+<span class="sd">    :type show_family_colors: bool</span>
+
+<span class="sd">    :ivar graph_changed: Qt signal emitted whenever the graph topology changes.</span>
+<span class="sd">    :type graph_changed: pyqtSignal</span>
+
+<span class="sd">    :ivar NODE_SIZE_DEFAULT: Default (and minimum) node size in Matplotlib units.</span>
+<span class="sd">    :type NODE_SIZE_DEFAULT: int</span>
+
+<span class="sd">    :ivar NODE_SIZE_MAX: Maximum allowed node size.</span>
+<span class="sd">    :type NODE_SIZE_MAX: int</span>
+
+<span class="sd">    :ivar NODE_SIZE_STEP: Size increment/decrement step.</span>
+<span class="sd">    :type NODE_SIZE_STEP: int</span>
+
+<span class="sd">    :ivar node_sizes: Per-node size overrides; absent key falls back to NODE_SIZE_DEFAULT.</span>
+<span class="sd">    :type node_sizes: dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">graph_changed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
@@ -815,6 +872,7 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canvas</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the Graph editor and attaches it to a Matplotlib canvas.</span>
+
 <span class="sd">        :param canvas: The Matplotlib FigureCanvas used for rendering.</span>
 <span class="sd">        :type canvas: FigureCanvas</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -866,10 +924,11 @@
 <span class="sd">        Node IDs are assigned as integers in sorted symbol order. Node positions are taken from boon.pos if </span>
 <span class="sd">        available, otherwise computed with a spring layout. Edge signs and colors are read from the interaction </span>
 <span class="sd">        graph and stored for later rendering.</span>
+
 <span class="sd">        :param boon: The Boolean Network model to visualise.</span>
 <span class="sd">        :type boon: BooN</span>
-<span class="sd">        :ivar SIGNCOLOR: Mapping from edge sign values to display colors.</span>
-<span class="sd">        :type SIGNCOLOR: dict</span>
+<span class="sd">        ``SIGNCOLOR`` is also stored as an instance attribute for use by the rendering methods.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">boon</span> <span class="o">=</span> <span class="n">boon</span>                                                            <span class="c1">#Reference BooN model for synchronization with the graph editor</span>
@@ -930,10 +989,13 @@
 <span class="sd">        Tracks node position updates during dragging without committing changes.</span>
 <span class="sd">        Updates the internal node position dictionary for all selected nodes based on the drag</span>
 <span class="sd">        delta and refreshes the visualization.</span>
+
 <span class="sd">        :param dx: Horizontal movement delta.</span>
 <span class="sd">        :type dx: float</span>
+
 <span class="sd">        :param dy: Vertical movement delta.</span>
 <span class="sd">        :type dy: float</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Shift the positions of all selected nodes by the drag delta (dx, dy) and redraw</span>
@@ -948,6 +1010,7 @@
 <span class="sd">        Persists the final dragged positions of selected nodes into the BooN model.</span>
 <span class="sd">        Called once on mouse release after a node drag. Writes the current node_positions</span>
 <span class="sd">        values back to boon.pos so that saving the file preserves the layout.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Build reverse map from int node ID to sympy symbol</span>
@@ -980,8 +1043,10 @@
 <span class="sd">        Applies a visual color to the currently selected edge.</span>
 <span class="sd">        Updates the edge color mapping for the selected edge in both directions (if bidirectional) </span>
 <span class="sd">        and refreshes the graph display.</span>
+
 <span class="sd">        :param rgb: RGB color tuple withvalues in [0, 1].</span>
 <span class="sd">        :type rgb: tuple[float, float, float]</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_edge</span><span class="p">:</span>
@@ -999,8 +1064,10 @@
 <span class="sd">        Changes the sign and display color of the currently selected edge.</span>
 <span class="sd">        Updates both the logical sign stored in the graph and the visual color mapping, then emits a graph </span>
 <span class="sd">        update (graph_changed) signal after modification to notify the BooN model.</span>
+
 <span class="sd">        :param sign: New sign value for the edge(+1 for activation, -1 for inhibition).</span>
 <span class="sd">        :type sign: int</span>
+
 <span class="sd">        :raises QMessageBox.warning: If no edge is currently selected.</span>
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1022,8 +1089,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">set_default_edge_sign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sign</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sets the default sign used for newly created edges.</span>
+
 <span class="sd">        :param sign: Edge sign (+1 for activation, -1 for inhibition).</span>
 <span class="sd">        :type sign: int</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_edge_sign</span> <span class="o">=</span> <span class="n">sign</span></div>
@@ -1034,10 +1103,13 @@
 <span class="sd">        Add a new node at the specified position in the graph.</span>
 <span class="sd">        Assigns the next available integer ID, generates a default label (e.g., &quot;x3&quot;), stores position and label, </span>
 <span class="sd">        redraws the graph, and emits the ``graph_changed`` signal.</span>
+
 <span class="sd">        :param x: X coordinate in data (axes) space.</span>
 <span class="sd">        :type x: float</span>
+
 <span class="sd">        :param y: Y coordinate in data (axes) space.</span>
 <span class="sd">        :type y: float</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">new_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_node_id</span>                                                  <span class="c1">#Assign next available int ID to new node</span>
@@ -1058,6 +1130,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Recomputes the next available integer node ID.</span>
 <span class="sd">        Must be called after undo/redo or any external graph modification that may have changed which integer IDs are in use.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">int_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)]</span>
@@ -1075,6 +1148,7 @@
 <span class="sd">        Generates the next available default node label.</span>
 <span class="sd">        Only labels matching the pattern &quot;x&lt;number&gt;&quot; are considered. Custom renamed nodes are </span>
 <span class="sd">        ignored when computing the next index.</span>
+
 <span class="sd">        :return: Next generated label (e.g., &quot;x3&quot;).</span>
 <span class="sd">        :rtype: str</span>
 <span class="sd">        Example::</span>
@@ -1100,10 +1174,13 @@
 <span class="sd">        Creates a directed edge between two nodes with the current default sign.</span>
 <span class="sd">        Assigns the default family color (white) and the sign-matching display color, clears the selection state,</span>
 <span class="sd">        redraws the graph, and emits graph_changed. Does nothing if the edge already exists.</span>
+
 <span class="sd">        :param source: Source node identifier.</span>
+
 <span class="sd">        :param target: Target node identifier.</span>
 <span class="sd">        :type source: any</span>
 <span class="sd">        :type target: any</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clear_edge_preview</span><span class="p">()</span>                                                      <span class="c1">#Clear the drag preview line before committing the edge</span>
@@ -1132,8 +1209,10 @@
 <span class="sd">        Computes the optimal placement angle for a self-loop edge on the given node.</span>
 <span class="sd">        Finds the largest angular gap between neighboring nodes around the target node, then places the loop at the midpoint of </span>
 <span class="sd">        that gap to minimise visual overlap. Falls back to a straight-up angle (π/2) when the node has no neighbors.</span>
+
 <span class="sd">        :param node: Node identifier.</span>
 <span class="sd">        :type node: any</span>
+
 <span class="sd">        :return: Angle in radians for self-loop placement, measured from the positive x-axis.</span>
 <span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1173,6 +1252,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Renders all nodes on the canvas with per-node sizing.</span>
 <span class="sd">        Node sizes are looked up individually from node_sizes, falling back to NODE_SIZE_DEFAULT.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
@@ -1194,6 +1274,7 @@
 <span class="sd">        center. All nodes are at default size in this mode so the fixed offset is consistent everywhere.</span>
 <span class="sd">        When node_label_top is False, LABEL_VERTICAL_OFFSET = 0 centers the label on the node.</span>
 <span class="sd">        Labels containing separators are wrapped by _wrap_node_label before display.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Choose vertical offset based on label-position mode</span>
@@ -1231,6 +1312,7 @@
 <span class="sd">        Draws all non-self-loop edges, dispatching to the appropriate drawing function.</span>
 <span class="sd">        Bidirectional pairs are drawn once together by _draw_bidirectional_edges; each unidirectional edge </span>
 <span class="sd">        is drawn individually by _draw_normal_edge. Self-loops are handled separately by _draw_self_loops.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">drawn_pairs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -1256,10 +1338,13 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Draws a single directed edge from u to v.</span>
 <span class="sd">        The full node size list is passed to networkx so it can offset the arrowhead correctly away from the target node border.</span>
+
 <span class="sd">        :param u: Source node identifier.</span>
+
 <span class="sd">        :param v: Target node identifier.</span>
 <span class="sd">        :type u: any</span>
 <span class="sd">        :type v: any</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#WARNING: node_size must list sizes in the order of ALL nodes so networkx can correctly offset the arrowhead away from the target node border.</span>
@@ -1283,8 +1368,11 @@
 <span class="sd">        Applies a perpendicular offset so that u→v and v→u edges are both visible without overlap. </span>
 <span class="sd">        The offset direction is derived from the canonical (sorted-name) ordering of u and v, which must stay consistent with _get_nearest_edge </span>
 <span class="sd">        and _draw_family_circles to ensure hit-testing and marker placement align with the rendered lines.</span>
+
 <span class="sd">        :param u: First node.</span>
+
 <span class="sd">        :param v: Second node.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_positions</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
@@ -1354,6 +1442,7 @@
 <span class="sd">        The loop orientation is chosen by _compute_self_loop_angle to avoid neighboring nodes.</span>
 <span class="sd">        The anchor radius scales with node size so the arc always clears the node border,</span>
 <span class="sd">        while the arc size R stays fixed so the loop itself does not grow with the node.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
@@ -1425,6 +1514,7 @@
 <span class="sd">        Draws a small colored circle at the midpoint of each edge that has a non-default family color.</span>
 <span class="sd">        Markers are placed on self-loops, normal edges, and bidirectional edges using the same geometry as their respective draw </span>
 <span class="sd">        functions to ensure visual alignment. Edges with BASIC_FAMILY_COLOR (white) are skipped — white means no family assigned.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_family_colors</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_family_colors</span><span class="p">:</span>
@@ -1530,6 +1620,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adjusts the axis limits to implement the current zoom level.</span>
 <span class="sd">        Zooming is centered on (0.5, 0.5) in data space. A higher zoom_factor narrows the visible range, magnifying the graph.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">axes</span>
@@ -1546,14 +1637,19 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Draws a temporary preview line for edge creation.</span>
 <span class="sd">        Used during interactive edge creation to show a dashed line between source node and current mouse position.</span>
+
 <span class="sd">        :param x1: Start X coordinate in data space.</span>
 <span class="sd">        :type x1: float</span>
+
 <span class="sd">        :param y1: Start Y coordinate in data space.</span>
 <span class="sd">        :type y1: float</span>
+
 <span class="sd">        :param x2: End X coordinate in data space (current mouse position).</span>
 <span class="sd">        :type x2: float</span>
+
 <span class="sd">        :param y2: End Y coordinate in data space (current mouse position).</span>
 <span class="sd">        :type y2: float</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Remove the previous preview line before drawing the updated one</span>
@@ -1580,6 +1676,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes the current edge preview from the canvas.</span>
 <span class="sd">        Clears temporary visualization used during interactive edge creation.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_preview</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1596,6 +1693,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Toggles visibility of edge family color circles and redraws the graph.</span>
 <span class="sd">        Enables or disables rendering of additional edge grouping markers and refreshes the graph display.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show_family_colors</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_family_colors</span>
@@ -1609,8 +1707,10 @@
 <span class="sd">        Toggles the sign of an edge between activation (+1) and inhibition (-1).</span>
 <span class="sd">        Updates both the logical sign stored in the graph and the display color,</span>
 <span class="sd">        then emits graph_changed to notify the BooN model.</span>
+
 <span class="sd">        :param edge: Edge to toggle as a (src, tgt) tuple.</span>
 <span class="sd">        :type edge: tuple</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">src</span><span class="p">,</span> <span class="n">tgt</span> <span class="o">=</span> <span class="n">edge</span>
@@ -1630,6 +1730,7 @@
 <span class="sd">        Draws nodes, labels, edges, self-loops, family color markers, and applies the current zoom.</span>
 <span class="sd">        If an edge preview is active when this is called (e.g. mid-drag), its endpoints are saved and the preview line </span>
 <span class="sd">        is recreated after the redraw so it is not lost.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Store the active edge preview endpoints before clearing the axes</span>
@@ -1687,8 +1788,10 @@
 <span class="sd">            - Left-click on edge (no node nearby): selects the edge.</span>
 <span class="sd">            - Left-click on node: selects the node for dragging (Shift adds to selection).</span>
 <span class="sd">            - Left-click on empty space: begins a rubber-band selection rectangle or prepares a node creation on release.</span>
+
 <span class="sd">        :param event: The Matplotlib mouse event carrying button, position, and modifier data.</span>
 <span class="sd">        :type event: matplotlib.backend_bases.MouseEvent</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Cancel edge creation if right-click on empty space</span>
@@ -1765,12 +1868,16 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Handles mouse button release events on the canvas.</span>
 <span class="sd">        On left-button release:</span>
-<span class="sd">            - If nodes were being dragged, commits their new positions.</span>
-<span class="sd">            - If a selection rectangle was drawn, selects all nodes within it.</span>
-<span class="sd">            - If the release is a short click on empty space, creates a new node there.</span>
+
+<span class="sd">        - If nodes were being dragged, commits their new positions.</span>
+<span class="sd">        - If a selection rectangle was drawn, selects all nodes within it.</span>
+<span class="sd">        - If the release is a short click on empty space, creates a new node there.</span>
+
 <span class="sd">        Resets all drag and selection rectangle state after processing.</span>
+
 <span class="sd">        :param event: The Matplotlib mouse event carrying button and position data.</span>
 <span class="sd">        :type event: matplotlib.backend_bases.MouseEvent</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>                                                   <span class="c1">#If left mouse click released</span>
@@ -1817,11 +1924,14 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Handles mouse motion events on the canvas.</span>
 <span class="sd">        Priority order:</span>
-<span class="sd">            1. Edge preview: if an edge source is set, draws a dashed preview line.</span>
-<span class="sd">            2. Selection rectangle: if dragging on empty space, draws a dashed rectangle.</span>
-<span class="sd">            3. Node dragging: if nodes are selected and being dragged, updates their positions.</span>
+
+<span class="sd">        1. Edge preview: if an edge source is set, draws a dashed preview line.</span>
+<span class="sd">        2. Selection rectangle: if dragging on empty space, draws a dashed rectangle.</span>
+<span class="sd">        3. Node dragging: if nodes are selected and being dragged, updates their positions.</span>
+
 <span class="sd">        :param event: The Matplotlib mouse event carrying position data.</span>
 <span class="sd">        :type event: matplotlib.backend_bases.MouseEvent</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">xdata</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">event</span><span class="o">.</span><span class="n">ydata</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1877,10 +1987,13 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Handles keyboard press events on the canvas.</span>
 <span class="sd">        Supported keys:</span>
-<span class="sd">            - Delete: Deletes the currently selected node(s) or edge.</span>
-<span class="sd">            - Escape: Cancels active edge creation and clears the edge preview.</span>
+
+<span class="sd">        - Delete: Deletes the currently selected node(s) or edge.</span>
+<span class="sd">        - Escape: Cancels active edge creation and clears the edge preview.</span>
+
 <span class="sd">        :param event: The Matplotlib key event.</span>
 <span class="sd">        :type event: matplotlib.backend_bases.KeyEvent</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;delete&#39;</span><span class="p">:</span>
@@ -1895,7 +2008,9 @@
 <span class="sd">        Handles a double-click on a node to create an edge via two successive double-clicks.</span>
 <span class="sd">        The first double-click stores the source node; the second creates the edge to the target.</span>
 <span class="sd">        Self-loops are allowed (double-clicking the same node twice).</span>
+
 <span class="sd">        :param node: The node that was double-clicked.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1915,9 +2030,12 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Selects or deselects a node, with optional multi-select via Shift.</span>
 <span class="sd">        Without Shift, replaces the entire selection with this node alone. With Shift, toggles the node in or out of the current selection.</span>
+
 <span class="sd">        :param node: The node identifier to select or deselect.</span>
+
 <span class="sd">        :param shift_pressed: True to toggle (multi-select), False to replace selection.</span>
 <span class="sd">        :type shift_pressed: bool</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">shift_pressed</span><span class="p">:</span>
@@ -1934,14 +2052,19 @@
 <span class="sd">        Selects all graph nodes whose positions fall within the specified rectangle.</span>
 <span class="sd">        Only user-created nodes (integer or Symbol IDs) are considered;</span>
 <span class="sd">        internal pattern nodes are ignored. The rectangle is axis-aligned and defined by any two opposite corners.</span>
+
 <span class="sd">        :param x1: X coordinate of the first corner.</span>
 <span class="sd">        :type x1: float</span>
+
 <span class="sd">        :param y1: Y coordinate of the first corner.</span>
 <span class="sd">        :type y1: float</span>
+
 <span class="sd">        :param x2: X coordinate of the opposite corner.</span>
 <span class="sd">        :type x2: float</span>
+
 <span class="sd">        :param y2: Y coordinate of the opposite corner.</span>
 <span class="sd">        :type y2: float</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1964,9 +2087,11 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Deletes the currently selected nodes or edge from the graph.</span>
 <span class="sd">        Priority:</span>
-<span class="sd">            - If nodes are selected, removes them and all their connected edges.</span>
-<span class="sd">            - If only an edge is selected, removes that edge.</span>
-<span class="sd">            - If nothing is selected, displays a warning dialog.</span>
+
+<span class="sd">        - If nodes are selected, removes them and all their connected edges.</span>
+<span class="sd">        - If only an edge is selected, removes that edge.</span>
+<span class="sd">        - If nothing is selected, displays a warning dialog.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_nodes</span><span class="p">:</span>                                                             <span class="c1">#If node selected</span>
@@ -1985,6 +2110,7 @@
 <span class="sd">        Deletes all currently selected nodes and all their connected edges.</span>
 <span class="sd">        Removes each node from the graph, purges its position and label entries, and clears any edge color or family </span>
 <span class="sd">        color records that reference the deleted nodes. Redraws the graph and emits graph_changed.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_nodes</span><span class="p">:</span>
@@ -2010,6 +2136,7 @@
 <span class="sd">        Deletes the currently selected edge and clears its visual metadata.</span>
 <span class="sd">        Removes the edge from the graph and purges its entries from edge_colors and edge_family_colors. </span>
 <span class="sd">        Redraws the graph and emits graph_changed.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_edge</span><span class="p">:</span>
@@ -2027,12 +2154,16 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_nearest_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Finds the graph node closest to the given data-space coordinates.</span>
+
 <span class="sd">        :param x: X coordinate to test.</span>
 <span class="sd">        :type x: float</span>
+
 <span class="sd">        :param y: Y coordinate to test.</span>
 <span class="sd">        :type y: float</span>
+
 <span class="sd">        :param threshold: Maximum Euclidean distance to consider as a hit.</span>
 <span class="sd">        :type threshold: float</span>
+
 <span class="sd">        :return: The nearest node identifier, or None if no node is within threshold.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">min_dist</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
@@ -2051,12 +2182,16 @@
 <span class="sd">        Finds the graph edge closest to the given data-space coordinates.</span>
 <span class="sd">        Handles normal edges, bidirectional pairs (with perpendicular offset matching the draw convention), </span>
 <span class="sd">        and self-loops (sampled as circular arcs).</span>
+
 <span class="sd">        :param x: X coordinate to test.</span>
 <span class="sd">        :type x: float</span>
+
 <span class="sd">        :param y: Y coordinate to test.</span>
 <span class="sd">        :type y: float</span>
+
 <span class="sd">        :param threshold: Maximum distance to consider as a hit.</span>
 <span class="sd">        :type threshold: float</span>
+
 <span class="sd">        :return: The nearest edge as a (src, tgt) tuple, or None if none is within threshold.</span>
 <span class="sd">        :rtype: tuple or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2138,8 +2273,11 @@
 <span class="sd">        Returns a stable canonical ordering for a bidirectional edge pair.</span>
 <span class="sd">        For a pair (u, v) where both (u, v) and (v, u) exist in the graph, returns the sorted tuple so </span>
 <span class="sd">        that the canonical form is consistent regardless of which direction is queried first.</span>
+
 <span class="sd">        :param u: First node.</span>
+
 <span class="sd">        :param v: Second node.</span>
+
 <span class="sd">        :return: Canonically ordered edge tuple (smaller, larger), or (u, v) if not bidirectional.</span>
 <span class="sd">        :rtype: tuple</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2153,8 +2291,10 @@
 <span class="sd">        Extracts data-space coordinates from a Matplotlib mouse event.</span>
 <span class="sd">        Falls back to inverse-transform of widget coordinates if ``xdata``/``ydata``</span>
 <span class="sd">        are not available directly (e.g., when the cursor is outside the axes).</span>
+
 <span class="sd">        :param event: The Matplotlib mouse event.</span>
 <span class="sd">        :type event: matplotlib.backend_bases.MouseEvent</span>
+
 <span class="sd">        :return: Tuple (x, y) in data coordinates, or (None, None) if unavailable.</span>
 <span class="sd">        :rtype: tuple[float | None, float | None]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2171,10 +2311,13 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Moves all selected nodes by the given delta and persists positions to the BooN model.</span>
 <span class="sd">        Updates both the internal ``node_positions`` dictionary and the BooN&#39;s own position store (``boon.pos``) for symbolic and integer nodes.</span>
+
 <span class="sd">        :param dx: Horizontal displacement in data-space units.</span>
 <span class="sd">        :type dx: float</span>
+
 <span class="sd">        :param dy: Vertical displacement in data-space units.</span>
 <span class="sd">        :type dy: float</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Abort if nothing is selected or graph is not initialised</span>
@@ -2232,18 +2375,25 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the minimum Euclidean distance from a point to a line segment.</span>
 <span class="sd">        If the segment has zero length, returns the distance from the point to the segment&#39;s endpoint.</span>
+
 <span class="sd">        :param px: X coordinate of the test point.</span>
 <span class="sd">        :type px: float</span>
+
 <span class="sd">        :param py: Y coordinate of the test point.</span>
 <span class="sd">        :type py: float</span>
+
 <span class="sd">        :param x1: X coordinate of the segment start.</span>
 <span class="sd">        :type x1: float</span>
+
 <span class="sd">        :param y1: Y coordinate of the segment start.</span>
 <span class="sd">        :type y1: float</span>
+
 <span class="sd">        :param x2: X coordinate of the segment end.</span>
 <span class="sd">        :type x2: float</span>
+
 <span class="sd">        :param y2: Y coordinate of the segment end.</span>
 <span class="sd">        :type y2: float</span>
+
 <span class="sd">        :return: Perpendicular (or endpoint) distance from the point to the segment.</span>
 <span class="sd">        :rtype: float</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2396,6 +2546,7 @@
 <span class="sd">        Opens the edge family color palette menu at the current mouse cursor position.</span>
 <span class="sd">        Rebuilds the palette UI before displaying so that the icon states (show/hide family colors) </span>
 <span class="sd">        always reflect the current application state.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;color_menu&quot;</span><span class="p">):</span>                                                             <span class="c1">#Menu must be set-up before opened</span>
@@ -2537,6 +2688,7 @@
 <span class="sd">        Opens the node-size adjustment panel at the current mouse cursor position.</span>
 <span class="sd">        The panel can be opened even without a selection because the &#39;All&#39; mode operates on every node.</span>
 <span class="sd">        A warning is shown only when the panel is actually used in &#39;Selected&#39; mode with no node chosen.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;resize_menu&quot;</span><span class="p">):</span>                                                       <span class="c1">#Verify menu exists</span>
@@ -2552,14 +2704,16 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">build_resize_palette</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build the node-size adjustment UI inside the resize menu popup.</span>
-<span class="sd">        The panel contains:</span>
-<span class="sd">          - A horizontal slider to set the size of the target node(s) continuously.</span>
-<span class="sd">          - A toggle switch (Selected / All) to apply the size to the selected node(s) or</span>
-<span class="sd">            uniformly to all nodes in the graph.</span>
-<span class="sd">          - A label-position icon button that switches the node name between Center and Top.</span>
-<span class="sd">            Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so</span>
-<span class="sd">            that the label offset is consistent across the graph.</span>
-<span class="sd">        :return: None</span>
+<span class="sd">                The panel contains:</span>
+
+<span class="sd">                - A horizontal slider to set the size of the target node(s) continuously.</span>
+<span class="sd">                - A toggle switch (Selected / All) to apply the size to the selected node(s) or</span>
+<span class="sd">                    uniformly to all nodes in the graph.</span>
+<span class="sd">                - A label-position icon button that switches the node name between Center and Top.</span>
+<span class="sd">                    Switching to Top immediately resets all node sizes back to NODE_SIZE_DEFAULT so</span>
+<span class="sd">                    that the label offset is consistent across the graph.</span>
+
+<span class="sd">                :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resize_menu</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
@@ -2771,6 +2925,7 @@
 <span class="sd">        Increases the display size of all currently selected nodes by one step.</span>
 <span class="sd">        Node sizes cannot exceed NODE_SIZE_MAX.</span>
 <span class="sd">        Redraws the graph and refreshes the resize palette to reflect the updated state.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_nodes</span><span class="p">:</span>
@@ -2791,6 +2946,7 @@
 <span class="sd">        Decreases the display size of all currently selected nodes by one step.</span>
 <span class="sd">        Size is floored at NODE_SIZE_DEFAULT.</span>
 <span class="sd">        Redraws the graph and refreshes the resize palette to reflect the updated state.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_nodes</span><span class="p">:</span>
@@ -2837,7 +2993,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Wraps a node label at natural separators: _, -, /, :</span>
 <span class="sd">        Only wraps if the label exceeds max_length characters. Each segment becomes a new line.</span>
+
 <span class="sd">        :param label: Original node label string.</span>
+
 <span class="sd">        :param max_length: Character threshold above which wrapping is applied.</span>
 <span class="sd">        :rtype: str</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -3011,8 +3169,11 @@
 <span class="sd">        Converts a BooN logical model back into a GUI graph representation.</span>
 <span class="sd">        This method rebuilds nodes, edges, positions, labels, and visual properties from the BooN interaction </span>
 <span class="sd">        graph and updates the graph editor accordingly.</span>
+
 <span class="sd">        :param boon: BooN model to convert.</span>
+
 <span class="sd">        :param graph_editor: Target GUI graph editor to populate.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ig</span> <span class="o">=</span> <span class="n">boon</span><span class="o">.</span><span class="n">interaction_graph</span>
@@ -3065,12 +3226,15 @@
 <span class="sd">    This class inherits from QMainWindow and is used to load and display an HTML-based</span>
 <span class="sd">    help file using QWebEngineView. It provides a &#39;Close&#39; button to dismiss the window.</span>
 <span class="sd">    The layout and UI components are loaded from a .ui file.</span>
-<span class="sd">        :ivar CloseButton: The button widget used to close the help window.</span>
-<span class="sd">        :type CloseButton: QPushButton</span>
-<span class="sd">        :ivar web: A web engine view widget used to render and display the help HTML content.</span>
-<span class="sd">        :type web: QWebEngineView</span>
-<span class="sd">        :ivar WebContainer: The container widget to hold the QWebEngineView displaying the help content.</span>
-<span class="sd">        :type WebContainer: QWidget</span>
+
+<span class="sd">    :ivar CloseButton: The button widget used to close the help window.</span>
+<span class="sd">    :type CloseButton: QPushButton</span>
+
+<span class="sd">    :ivar web: A web engine view widget used to render and display the help HTML content.</span>
+<span class="sd">    :type web: QWebEngineView</span>
+
+<span class="sd">    :ivar WebContainer: The container widget to hold the QWebEngineView displaying the help content.</span>
+<span class="sd">    :type WebContainer: QWidget</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Help</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>                                                     <span class="c1">#Initialize the parent class (QMainWindow)</span>
@@ -3090,24 +3254,24 @@
 <a class="viewcode-back" href="../index.html#boonify.View">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">View</span><span class="p">(</span><span class="n">QDialog</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a dialog interface for managing and displaying Boolean formulas in a tabular format. </span>
-<span class="sd">    The interface supports operations like editing, validating, and converting Boolean formulas, and dynamically </span>
-<span class="sd">    updates the view accordingly.</span>
-<span class="sd">    This class is designed to be a standalone dialog that integrates with a parent component, using its logical </span>
-<span class="sd">    formulas and variables for display and interaction.</span>
-<span class="sd">        :ivar style: Style of the formulas displayed in the view.</span>
-<span class="sd">        :type style: str</span>
-<span class="sd">        :ivar parent: Reference to the parent entity using this view, typically the Boonify class, which </span>
-<span class="sd">        contains the necessary logical formulas and variables.</span>
-<span class="sd">        :type parent: object</span>
-<span class="sd">        :ivar formulas: List of formula input fields linked to variables.</span>
-<span class="sd">            Each field corresponds to a row in the table, allowing live editing of formulas.</span>
-<span class="sd">        :type formulas: list[QLineEdit]</span>
+<span class="sd">    Dialog showing Boolean formulas in a table, allowing editing, validation and conversions.</span>
+
+<span class="sd">    Integrates with a parent `Boonify` instance to obtain formulas and variables for display.</span>
+
+<span class="sd">    :ivar style: Style of the formulas displayed in the view.</span>
+<span class="sd">    :type style: str</span>
+
+<span class="sd">    :ivar parent: Reference to the parent `Boonify` instance.</span>
+<span class="sd">    :type parent: object</span>
+
+<span class="sd">    :ivar formulas: List of formula input fields linked to variables.</span>
+<span class="sd">    :type formulas: list[QLineEdit]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the View dialog, loads the UI layout, sets up signal connections, and populates the formula </span>
 <span class="sd">        table for the current BooN.</span>
+
 <span class="sd">        :param parent: The parent Boonify instance providing BooN data.</span>
 <span class="sd">        :type parent: Boonify or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -3189,6 +3353,7 @@
 <span class="sd">        variables involved, and updates the associated BooN data structure if the formula passes all checks. </span>
 <span class="sd">        It also refreshes related components to reflect the changes.</span>
 <span class="sd">        In case of errors, appropriate error messages are displayed to the user.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">BooNContent</span><span class="o">.</span><span class="n">currentRow</span><span class="p">()</span>                                                     <span class="c1">#Get the current modified row</span>
@@ -3220,6 +3385,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">cb_styling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Updates the current styling for the component based on the selected style and refreshes the view.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">STYLE</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Style</span><span class="o">.</span><span class="n">currentText</span><span class="p">()]</span>                                            <span class="c1">#Apply new selected display style</span>
@@ -3232,6 +3398,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts the current BooNn into Disjunctive Normal Form (DNF)</span>
 <span class="sd">        and refreshes the view accordingly.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
@@ -3261,12 +3428,15 @@
 <span class="sd">    This class represents a graphical interface for visualizing stable states of a Boolean network model. </span>
 <span class="sd">    It allows users to switch between different display styles, such as icons or textual representation, </span>
 <span class="sd">    for better interpretation of the stable states.</span>
-<span class="sd">        :ivar parent: Reference to the parent widget or application component.</span>
-<span class="sd">        :type parent: QWidget</span>
-<span class="sd">        :ivar style: The display style for representing stable states (e.g., &#39;Icon Boolean&#39;).</span>
-<span class="sd">        :type style: str</span>
-<span class="sd">        :ivar datamodel: The data model used for organizing and displaying stable states.</span>
-<span class="sd">        :type datamodel: QStandardItemModel</span>
+
+<span class="sd">    :ivar parent: Reference to the parent widget or application component.</span>
+<span class="sd">    :type parent: QWidget</span>
+
+<span class="sd">    :ivar style: The display style for representing stable states (e.g., &#39;Icon Boolean&#39;).</span>
+<span class="sd">    :type style: str</span>
+
+<span class="sd">    :ivar datamodel: The data model used for organizing and displaying stable states.</span>
+<span class="sd">    :type datamodel: QStandardItemModel</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
@@ -3292,6 +3462,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Updates the formula display style and refreshes the view.</span>
 <span class="sd">        This method changes how formulas are rendered (logical, Python, etc.) based on user selection.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Style</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span>                                                   <span class="c1">#Change the display style</span>
@@ -3307,6 +3478,7 @@
 <span class="sd">        structure using a Qt `QStandardItemModel`. Each row represents a variable, and each column corresponds </span>
 <span class="sd">        to a stable state. The presentation style of the data (e.g., icons, boolean values, or integers) is</span>
 <span class="sd">        determined by the specified `style` attribute of the object.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">theboon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">boon</span>                                                              <span class="c1">#Get current BooN of parent</span>
@@ -3355,19 +3527,24 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">QMainWindow</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A Model class for managing and visualizing network dynamics using a GUI interface.</span>
-<span class="sd">        :ivar parent: Reference to the parent window or application.</span>
-<span class="sd">        :type parent: Any</span>
-<span class="sd">        :ivar mode: Represents the selected mode of dynamics (asynchronous or synchronous).</span>
-<span class="sd">        :type mode: Enum or equivalent</span>
-<span class="sd">        :ivar layout: Defines the network layout function to be used for visualization.</span>
-<span class="sd">        :type layout: Callable</span>
-<span class="sd">        :ivar canvas: Matplotlib widget for rendering the network visualization.</span>
-<span class="sd">        :type canvas: matplotlib.backends.backend_qt5agg.FigureCanvas</span>
+
+<span class="sd">    :ivar parent: Reference to the parent window or application.</span>
+<span class="sd">    :type parent: Any</span>
+
+<span class="sd">    :ivar mode: Represents the selected mode of dynamics (asynchronous or synchronous).</span>
+<span class="sd">    :type mode: Enum or equivalent</span>
+
+<span class="sd">    :ivar layout: Defines the network layout function to be used for visualization.</span>
+<span class="sd">    :type layout: Callable</span>
+
+<span class="sd">    :ivar canvas: Matplotlib widget for rendering the network visualization.</span>
+<span class="sd">    :type canvas: matplotlib.backends.backend_qt5agg.FigureCanvas</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes the Model window, loads the UI layout, connects radio buttons and the layout combo box, </span>
 <span class="sd">        and renders the initial dynamics model.</span>
+
 <span class="sd">        :param parent: The parent Boonify instance providing BooN data.</span>
 <span class="sd">        :type parent: Boonify or None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -3401,6 +3578,7 @@
 <span class="sd">        Determine and set the mode of operation based on user selection from the interface. This function checks the state</span>
 <span class="sd">        of radio buttons to assign either an asynchronous or synchronous mode. The established mode is then used for</span>
 <span class="sd">        further modeling via a further call to the `modeling` method.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Read the selected radio button and update the dynamics mode</span>
@@ -3420,6 +3598,7 @@
 <span class="sd">        Adjusts the network layout based on the selected option and applies the corresponding layout algorithm to the network. </span>
 <span class="sd">        The method retrieves the currently selected network layout from a user interface component, maps it to an appropriate algorithm, and configures </span>
 <span class="sd">        the network&#39;s visualization layout accordingly. It also invokes an update via the `modeling` method to apply and reflect the changes.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Map the selected layout name to its corresponding NetworkX/BooN function</span>
@@ -3445,6 +3624,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">modeling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the model of dynamics.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Clear the axes and compute the dynamics model</span>
@@ -3472,12 +3652,15 @@
 <span class="sd">    This class is responsible for initializing the controllability user interface, handling the interactions </span>
 <span class="sd">    between destiny and observers tables, computing control actions based on user selections, and managing the </span>
 <span class="sd">    graphical representation of these actions.</span>
-<span class="sd">        :ivar parent: Parent window instance for the controllability widget.</span>
-<span class="sd">        :type parent: QWidget</span>
-<span class="sd">        :ivar actions: Stores the calculated control actions, if any.</span>
-<span class="sd">        :type actions: list or None</span>
-<span class="sd">        :ivar row: Index of the currently selected solution in control actions, if applicable.</span>
-<span class="sd">        :type row: int or None</span>
+
+<span class="sd">    :ivar parent: Parent window instance for the controllability widget.</span>
+<span class="sd">    :type parent: QWidget</span>
+
+<span class="sd">    :ivar actions: Stores the calculated control actions, if any.</span>
+<span class="sd">    :type actions: list or None</span>
+
+<span class="sd">    :ivar row: Index of the currently selected solution in control actions, if applicable.</span>
+<span class="sd">    :type row: int or None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Controllability</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
@@ -3493,6 +3676,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">initialize_controllability</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the controllability setup for the application.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">theboon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">boon</span>
@@ -3563,11 +3747,12 @@
 <a class="viewcode-back" href="../index.html#boonify.Controllability.destiny_to_observers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">destiny_to_observers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the check state of an item in the `Observers` table based on the provided label and the currently </span>
+<span class="sd">        Updates the check state of an item in the `Observers` table based on the provided label and the currently</span>
 <span class="sd">        selected row in the `Destiny` table.</span>
-<span class="sd">        :param label: A string indicating the check state condition. </span>
-<span class="sd">                If the label is `&quot;None&quot;`, the item is unchecked; otherwise, it is checked.</span>
+
+<span class="sd">        :param label: If &quot;None&quot;, the item is unchecked; otherwise it is checked.</span>
 <span class="sd">        :type label: str</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Destiny</span><span class="o">.</span><span class="n">currentRow</span><span class="p">()</span>
@@ -3586,8 +3771,10 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Synchronizes the Destiny table when an observer checkbox is unchecked.</span>
 <span class="sd">        When a variable is unchecked in the Observers table, its corresponding entry in the Destiny table is reset to &quot;None&quot;.</span>
+
 <span class="sd">        :param chkitem: The table item whose check state changed.</span>
 <span class="sd">        :type chkitem: QTableWidgetItem</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">row</span> <span class="o">=</span> <span class="n">chkitem</span><span class="o">.</span><span class="n">row</span><span class="p">()</span>
@@ -3606,6 +3793,7 @@
 <span class="sd">        by the BooN model. The method determines the applicable control actions by analyzing a user-specified query defining </span>
 <span class="sd">        the desired or undesired state, along with the possible variables that can be controlled. This process involves </span>
 <span class="sd">        interpreting various parameters such as observer states, query types, and logical modalities.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">row</span> <span class="o">=</span> <span class="kc">None</span>
@@ -3671,6 +3859,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Build the Qt tree model from self.actions and update ControlActions.</span>
 <span class="sd">        Connected to Threader.finished so it always runs on the main thread.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Rebuild the tree model from self.actions on the main thread</span>
@@ -3707,6 +3896,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">select_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Keep the selection solution</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Record the selected solution index (parent row for child items, own row for root items)</span>
@@ -3718,6 +3908,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">actupon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Apply the selection actions on the BooN.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Apply each control action of the selected solution to the BooN descriptor</span>
@@ -3741,37 +3932,43 @@
 <a class="viewcode-back" href="../index.html#boonify.Threader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Threader</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Threader class for managing application execution within a separate thread. </span>
-<span class="sd">    This class is designed to separate the execution of a provided application function into its own thread using </span>
-<span class="sd">    PyQt&#39;s threading mechanism. The class provides functionality to start, switch, and terminate the application</span>
+<span class="sd">    Threader class for managing application execution within a separate thread.</span>
+
+<span class="sd">    This class is designed to separate the execution of a provided application</span>
+<span class="sd">    function into its own thread using PyQt&#39;s threading mechanism. The class</span>
+<span class="sd">    provides functionality to start, switch, and terminate the application</span>
 <span class="sd">    running within the thread effectively.</span>
-<span class="sd">        :ivar finished: Signal emitted when the thread&#39;s application completes execution.</span>
-<span class="sd">        :ivar app: The callable application to be executed within the thread.</span>
-<span class="sd">        :type app: Callable</span>
-<span class="sd">        :ivar thread: The QThread instance used to run the application in a separate thread.</span>
-<span class="sd">        :type thread: QThread</span>
+
+<span class="sd">    :ivar finished: Signal emitted when the thread&#39;s application completes execution.</span>
+<span class="sd">    :ivar app: The callable application to be executed within the thread.</span>
+<span class="sd">    :type app: Callable</span>
+
+<span class="sd">    :ivar thread: The QThread instance used to run the application in a separate thread.</span>
+<span class="sd">    :type thread: QThread</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">finished</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Represents a custom asynchronous functionality encapsulated in a QThread.</span>
-<span class="sd">        This class initializes with a callable app function, assigns it to an internal property, and starts </span>
-<span class="sd">        a new thread for its execution.</span>
+<span class="sd">        This class initializes with a callable app function, assigns it to an internal</span>
+<span class="sd">        property, and starts a new thread for its execution.</span>
+
 <span class="sd">        Attributes:</span>
 <span class="sd">            app (Callable[[], Any]): A callable function assigned to the class instance.</span>
 <span class="sd">            thread (QThread): The thread in which the object operates.</span>
+
 <span class="sd">        :param app: A callable function that serves as the application&#39;s main function.</span>
-<span class="sd">                Defaults to a no-op lambda function.</span>
+<span class="sd">            Defaults to a no-op lambda function.</span>
+
 <span class="sd">        :type app: Callable[[], Any]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>
 
-        <span class="c1">#STEP: Create and start the background thread, wiring it to run()</span>
+        <span class="c1"># Create the thread</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thread</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">started</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>                                               <span class="c1">#Trigger run() when the thread starts</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="p">)</span>                                                      <span class="c1">#Move this QObject to the new thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Threader.run">
@@ -3794,7 +3991,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Handles the application of a given app instance to a particular object by assigning the provided </span>
 <span class="sd">        app to the instance attribute.</span>
+
 <span class="sd">        :param app: The application instance to be applied.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">app</span> <span class="o">=</span> <span class="n">app</span>                                                                      <span class="c1">#Replace current callable with new one</span></div>
@@ -3806,6 +4005,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Attempts to terminate the thread execution in an orderly manner. This method leverages the `quit` function of </span>
 <span class="sd">        the thread instance to signal and ensure termination of its event loop.</span>
+
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1">#STEP: Signal the thread to stop and block until it finishes</span>
