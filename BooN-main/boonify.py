@@ -15,6 +15,7 @@ import sys
 import os
 import math
 import re
+import copy
 import numpy as np
 
 # Third-party imports: import functions only used 
@@ -148,6 +149,7 @@ class Boonify(QMainWindow):
         self.history = [None] * HSIZE                                                       #History of BooN snapshots
         self.color_history = [None] * HSIZE                                                 #History of edge_family_colors snapshots (parallel to history)
         self.hindex = 0                                                                     #Index of the last BooN added in the history.
+        self.undo_depth = 0                                                                 #Number of steps currently undone (0 = at tip; max HSIZE-1)
 
         self.hupdate = False                                                                #Flag determining whether the history is updated.
         self.saved = True                                                                   #Flag determining whether the current BooN is saved.
@@ -311,6 +313,7 @@ class Boonify(QMainWindow):
         :return: None
         """
         if self.filename:
+            self.graph_editor._sync_node_sizes_to_boon()                                   #Flush node_sizes, node_label_top, and edge_family_colors into boon.meta before writing
             self.boon.save(self.filename)
             self.display_saved_flag()                                                       #Mark the BooN as saved in the status bar
         else:
@@ -327,6 +330,7 @@ class Boonify(QMainWindow):
         filename = QFileDialog.getSaveFileName(self, "Save", "", "Boon Files (*.boon);; All Files (*);;")
         if filename:
             self.filename = filename[0]
+            self.graph_editor._sync_node_sizes_to_boon()                                   #Flush node_sizes, node_label_top, and edge_family_colors into boon.meta before writing
             self.boon.save(self.filename)
             self.display_saved_flag()                                                       #Mark the BooN as saved in the status bar
 
@@ -444,6 +448,7 @@ class Boonify(QMainWindow):
         self.history = [None] * HSIZE                                                       #Clear all BooN snapshots from history
         self.color_history = [None] * HSIZE                                                 #Clear all edge_family_colors snapshots from color history
         self.hindex = 0                                                                     #Reset history index to 0   
+        self.undo_depth = 0                                                                 #Reset undo depth after history clear
         self.add_history()                                                                  #Record the current state as the initial history entry
         self.hupdate = False                                                                #Reset the history update flag after recording the initial state
         self.display_saved_flag()                                                           #Update the saved-state in the status bar    
@@ -452,19 +457,24 @@ class Boonify(QMainWindow):
         """
         Restores the previous BooN and edge family colors from the parallel history stacks.
         Moves the history cursor one step back. Edge colors are restored before setup_design so the graph redraw 
-        immediately uses the correct color state. Does nothing if the previous slot is empty (ex: beginning of history).
+        immediately uses the correct color state.
+        Stops at the oldest recorded state (up to HSIZE-1 steps back) and never wraps around.
 
         :return: None
         """
+        if self.undo_depth >= HSIZE - 1:                                                    #Already at the oldest possible state: cannot go further back
+            return
         hindex = (self.hindex - 1) % HSIZE                                                  #Compute the previous history index
         
-        if self.history[hindex] is None:                                                    #If no earlier state: abort undo
+        if self.history[hindex] is None:                                                    #Slot is empty: beginning of history reached
             return
         
         self.disablecallback = True                                                         #Prevent graph callbacks from triggering during restore
         self.boon = self.history[hindex].copy()
+        self.boon.meta = copy.deepcopy(getattr(self.history[hindex], "meta", None) or {})   #Force deep-copy meta from snapshot: boon.copy() may drop monkey-patched attrs
         self.graph_editor.edge_family_colors = dict(self.color_history[hindex] or {})       #Restore edge family colors before redrawing
         self.hindex = hindex                                                                #Move history index back to the restored state
+        self.undo_depth += 1                                                                #Track how many steps back we are from the tip
         self.refresh()                                                                      #Refresh all open views to reflect the restored state
         self.graph_editor.setup_design(self.boon)
         self.graph_editor.refresh_next_node_id()
@@ -475,19 +485,23 @@ class Boonify(QMainWindow):
         Restores the next BooN and edge family colors from the parallel history stacks.
         Moves the history cursor one step forward. Edge colors are restored before setup_design
         so the graph redraw immediately uses the correct color state.
-        Does nothing if the next slot is empty (i.e. the top of history is reached).
+        Stops at the most recent state and never wraps around.
 
         :return: None
         """
+        if self.undo_depth <= 0:                                                            #Already at the most recent state: nothing to redo
+            return
         hindex = (self.hindex + 1) % HSIZE                                                  #Compute the next history index
 
-        if self.history[hindex] is None:                                                    #If no later state: abort redo
+        if self.history[hindex] is None:                                                    #Slot is empty: no future state recorded
             return
         
         self.disablecallback = True                                                         #Prevent graph callbacks from triggering during restore
         self.boon = self.history[hindex].copy()
+        self.boon.meta = copy.deepcopy(getattr(self.history[hindex], "meta", None) or {})   #Force deep-copy meta from snapshot: boon.copy() may drop monkey-patched attrs
         self.graph_editor.edge_family_colors = dict(self.color_history[hindex] or {})       #Restore edge family colors before redrawing
         self.hindex = hindex                                                                #Move history index forward to the restored state
+        self.undo_depth -= 1                                                                #One step closer to the tip
         self.refresh()                                                                      #Refresh all open views to reflect the restored state
         self.graph_editor.setup_design(self.boon)
         self.graph_editor.refresh_next_node_id()
@@ -515,7 +529,13 @@ class Boonify(QMainWindow):
             self.hupdate = True                                                             #Signal to indicate a new entry was recorded    
             hindex = (hindex + 1) % HSIZE                                                   #Move history index to next slot
             self.history[hindex] = self.boon.copy()                                         #Record a copy of the current BooN in the history
-            self.color_history[hindex] = dict(getattr(self.graph_editor, "edge_family_colors", {}))  #Record a snapshot of the current edge family colors
+            self.history[hindex].meta = copy.deepcopy(getattr(self.boon, "meta", None) or {})  #Force deep-copy meta: boon.copy() may drop monkey-patched attrs
+            _efc = getattr(self.graph_editor, "edge_family_colors", {})
+            _nl  = getattr(self.graph_editor, "node_labels", {})
+            self.color_history[hindex] = {                                                  #Store colors keyed by (label, label) strings — stable across setup_design ID reassignment
+                (_nl.get(u, u), _nl.get(v, v)): c for (u, v), c in _efc.items()
+            }
+            self.undo_depth = 0                                                             #New action recorded: reset undo depth so redo is no longer available
             self.hindex = hindex
             if self.history[hindex] and self.history[hindex].desc:
                 self.display_saved_flag(False)                                              #Mark the BooN as unsaved after structural change
@@ -526,27 +546,49 @@ class Boonify(QMainWindow):
     def add_color_history(self, boon_snapshot=None):
         """
         Records a color-only change into both parallel history stacks.
-        Called by set_edge_color_from_palette and set_family_color after updating edge_family_colors, 
-        when the BooN descriptor itself has not changed.
-        A new slot is created only if the color dict actually differs from the last recorded snapshot,
-        so selecting the same color twice produces only one history entry.
+        Called by set_edge_color_from_palette, set_family_color, and node-resize operations after
+        updating edge_family_colors / node_sizes / node_label_top, when the BooN descriptor itself
+        has not changed.
+        A new slot is created only if something actually differs from the last recorded snapshot,
+        so making the same change twice produces only one history entry.
 
         :return: None
         """
-        current_colors = dict(getattr(self.graph_editor, "edge_family_colors", {}))
+        _efc = getattr(self.graph_editor, "edge_family_colors", {})
+        _nl  = getattr(self.graph_editor, "node_labels", {})
+        current_colors = {                                                                  #Store colors keyed by (label, label) strings — stable across setup_design ID reassignment
+            (_nl.get(u, u), _nl.get(v, v)): c for (u, v), c in _efc.items()
+        }
         current_pos = dict(getattr(self.boon, "pos", {}) or {})
         hindex = self.hindex
 
         last_pos = dict(getattr(self.history[hindex], "pos", {}) or {}) if self.history[hindex] else {}
 
-        if current_colors == self.color_history[hindex] and current_pos == last_pos:        #Color unchanged: no ne entry recorded
+        #STEP: Also compare node_sizes and node_label_top stored in boon.meta
+        current_meta = getattr(self.boon, "meta", None) or {}
+        last_meta = getattr(self.history[hindex], "meta", None) or {} if self.history[hindex] else {}
+        current_sizes = current_meta.get("node_sizes", {})
+        last_sizes = last_meta.get("node_sizes", {})
+        current_label_top = current_meta.get("node_label_top", False)
+        last_label_top = last_meta.get("node_label_top", False)
+
+        unchanged = (
+            current_colors == self.color_history[hindex]
+            and current_pos == last_pos
+            and current_sizes == last_sizes
+            and current_label_top == last_label_top
+        )
+        if unchanged:                                                                        #Nothing changed: no new entry recorded
             return 
         
         self.disablecallback = True                                                         #Prevent graph callbacks from triggering during history update      
         hindex = (hindex + 1) % HSIZE                                                       #Move history index to next slot
-        self.history[hindex] = (boon_snapshot or self.boon).copy()
+        _src_boon = boon_snapshot or self.boon
+        self.history[hindex] = _src_boon.copy()
+        self.history[hindex].meta = copy.deepcopy(getattr(_src_boon, "meta", None) or {})   #Force deep-copy meta: boon.copy() may drop monkey-patched attrs
         self.color_history[hindex] = current_colors                                         #Record the new color snapshot in the parallel color history
         self.hindex = hindex
+        self.undo_depth = 0                                                                 #New action recorded: reset undo depth so redo is no longer available
         self.display_saved_flag(False)                                                      #Mark the BooN as unsaved after color change
         self.disablecallback = False
 
@@ -807,6 +849,22 @@ class Graph(QObject):
 
         self.node_labels = {symbol_to_id[sym]: str(sym) for sym in ig.nodes()}              #Store node labels for display, using the original symbol names from the BooN
 
+        #STEP: Remap edge_family_colors from label-string keys to current session int-ID keys.
+        #      color_history stores (label, label) pairs as stable keys; setup_design assigns
+        #      fresh int IDs each call, so we must convert back to int-ID keys here.
+        if hasattr(self, "edge_family_colors") and self.edge_family_colors:
+            label_to_id = {str(sym): nid for sym, nid in symbol_to_id.items()}             #label string -> new int ID for this session
+            remapped = {}
+            for (u_key, v_key), color in self.edge_family_colors.items():
+                if isinstance(u_key, str) and isinstance(v_key, str):                       #Label-keyed entry (from color_history): convert to int IDs
+                    u_new = label_to_id.get(u_key)
+                    v_new = label_to_id.get(v_key)
+                    if u_new is not None and v_new is not None:
+                        remapped[(u_new, v_new)] = color
+                else:                                                                        #Already int-keyed (mid-session assignment): keep as-is
+                    remapped[(u_key, v_key)] = color
+            self.edge_family_colors = remapped
+
         #STEP: Assign node positions
         pos = getattr(boon, "pos", None)
         if pos:                                                                             #If available: assign node positions from boon.pos
@@ -822,6 +880,24 @@ class Graph(QObject):
         for node_id, label in self.node_labels.items():
             if label in saved_sizes:
                 self.node_sizes[node_id] = saved_sizes[label]                               #Re-map from symbol string back to int node ID
+
+        #STEP: Restore node_label_top from boon.meta if available
+        self.node_label_top = meta.get("node_label_top", False)
+
+        #STEP: Restore edge_family_colors from boon.meta on fresh load (when not already set by undo/redo)
+        if not getattr(self, "edge_family_colors", {}):                                   #Empty: this is a fresh open/import, not an undo/redo restore
+            efc_by_label = meta.get("edge_family_colors", {})
+            label_to_id = {str(sym): symbol_to_id[sym] for sym in ig.nodes()}
+            restored_efc = {}
+            for key, color in efc_by_label.items():
+                parts = key.split("\t", 1)
+                if len(parts) == 2:
+                    u_id = label_to_id.get(parts[0])
+                    v_id = label_to_id.get(parts[1])
+                    if u_id is not None and v_id is not None:
+                        restored_efc[(u_id, v_id)] = tuple(color)
+            if restored_efc:
+                self.edge_family_colors = restored_efc
 
         #STEP: Add edges to the graph, with their signs and display color
         self.edge_colors = {}
@@ -1618,6 +1694,7 @@ class Graph(QObject):
             - Right-click on edge: toggles the edge sign and selects the edge.
             - Left-click on edge (no node nearby): selects the edge.
             - Left-click on node: selects the node for dragging (Shift adds to selection).
+            - Left-double-click on node: selects the node and opens the rename dialog.
             - Left-click on empty space: begins a rubber-band selection rectangle or prepares a node creation on release.
 
         :param event: The Matplotlib mouse event carrying button, position, and modifier data.
@@ -1667,11 +1744,17 @@ class Graph(QObject):
             print(f"Selected edge: {nearest_edge}")
             return
         
-        #STEP: Left click on node to select for dragging
+        #STEP: Left click on node to select for dragging (or double-click to rename)
         if event.button == 1 and nearest_node is not None:
             shift_pressed = event.key is not None and 'shift' in event.key.lower()
             self._select_node(nearest_node, shift_pressed)
             self.selected_edge = None
+
+            #STEP: Left double-click on a node triggers rename
+            if getattr(event, 'dblclick', False):
+                self.rename_node()
+                return
+
             # Set up for dragging
             self.drag_start_pos = (event.xdata, event.ydata)
             self.selection_rect_start = None
@@ -2593,6 +2676,13 @@ class Graph(QObject):
                     self.node_sizes[node] = value
             self.redraw_graph()
 
+            #STEP: Persist node_sizes into boon.meta immediately so save() captures the latest sizes
+            self._sync_node_sizes_to_boon()
+
+            #STEP: Record resize in undo/redo history
+            if hasattr(self, "_boonify_parent"):
+                self._boonify_parent.add_color_history()
+
         slider.valueChanged.connect(_on_slider_changed)
 
         #STEP: Add separator between resize and label settings
@@ -2672,6 +2762,13 @@ class Graph(QObject):
             _update_label_pos_btn(checked)
             self.redraw_graph()
 
+            #STEP: Persist node_label_top and cleared node_sizes into boon.meta immediately
+            self._sync_node_sizes_to_boon()
+
+            #STEP: Record label-position change in undo/redo history
+            if hasattr(self, "_boonify_parent"):
+                self._boonify_parent.add_color_history()
+
         label_pos_btn.toggled.connect(_toggle_label_position)
         label_pos_row.addWidget(label_pos_btn)
         label_pos_row.addStretch()
@@ -2710,6 +2807,11 @@ class Graph(QObject):
         self.build_resize_palette()
         self.resize_menu.popup(self.resize_menu.pos())
 
+        #STEP: Persist and record in history
+        self._sync_node_sizes_to_boon()
+        if hasattr(self, "_boonify_parent"):
+            self._boonify_parent.add_color_history()
+
     def _resize_decrease(self):
         """
         Decreases the display size of all currently selected nodes by one step.
@@ -2730,6 +2832,53 @@ class Graph(QObject):
         self.redraw_graph()
         self.build_resize_palette()
         self.resize_menu.popup(self.resize_menu.pos())
+
+        #STEP: Persist and record in history
+        self._sync_node_sizes_to_boon()
+        if hasattr(self, "_boonify_parent"):
+            self._boonify_parent.add_color_history()
+
+    def _sync_node_sizes_to_boon(self):
+        """
+        Writes the current node_sizes and node_label_top into boon.meta so that save() always
+        captures the latest resize/label-position state, even when the BooN descriptor itself
+        has not changed (i.e. graph_to_boon() was not called).
+
+        :return: None
+        """
+        if not hasattr(self, "boon") or self.boon is None:
+            return
+
+        #STEP: Ensure boon.meta exists
+        if not hasattr(self.boon, "meta") or self.boon.meta is None:
+            self.boon.meta = {}
+
+        #STEP: Build reverse map from int node ID to symbol string
+        id_to_symbol = {
+            node_id: symbols(label)
+            for node_id, label in self.node_labels.items()
+            if isinstance(label, str) and label.strip()
+        }
+
+        #STEP: Serialize node_sizes under string keys (JSON-safe)
+        node_sizes_by_symbol = {}
+        for node_id, size in self.node_sizes.items():
+            if node_id in id_to_symbol:
+                node_sizes_by_symbol[str(id_to_symbol[node_id])] = size
+        self.boon.meta["node_sizes"] = node_sizes_by_symbol
+
+        #STEP: Persist node_label_top so it survives save/load
+        self.boon.meta["node_label_top"] = getattr(self, "node_label_top", False)
+
+        #STEP: Serialize edge_family_colors under (label, label) string keys so save/load preserves family color assignments
+        efc = getattr(self, "edge_family_colors", {})
+        efc_by_label = {}
+        for (u_id, v_id), color in efc.items():
+            u_lbl = self.node_labels.get(u_id) if isinstance(u_id, int) else u_id        #Already a label string if not int
+            v_lbl = self.node_labels.get(v_id) if isinstance(v_id, int) else v_id
+            if u_lbl is not None and v_lbl is not None:
+                efc_by_label[f"{u_lbl}\t{v_lbl}"] = list(color)                          #Tab-separated label pair as dict key (JSON-safe); color as list
+        self.boon.meta["edge_family_colors"] = efc_by_label
 
     def set_family_color(self, color_value):
         """
@@ -2922,6 +3071,9 @@ class Network:
             if node_id in id_to_symbol:
                 node_sizes_by_symbol[str(id_to_symbol[node_id])] = size                     #Store under string key for JSON-safe serialization
         boon.meta["node_sizes"] = node_sizes_by_symbol
+
+        #STEP: Persist node_label_top so it survives save/load
+        boon.meta["node_label_top"] = getattr(graph_editor, "node_label_top", False)
 
         return boon
     
