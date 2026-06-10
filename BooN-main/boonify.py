@@ -2812,12 +2812,13 @@ class Network:
         Converts GUI graph into BooN using BooN.from_ig() (correct logical semantics).
 
         Family color semantics (clause grouping):
-        Edges that share the same family color AND point to the same target node belong to the SAME AND-clause 
-        (same module index). Edges with different family colors (or the default white) each form their own 
-        separate clause, joined by OR in the final DNF formula.
+        Edges that share the same family color AND point to the same target node belong to the SAME AND-clause
+        (same module index). Edges with different family colors each form their own separate clause,
+        joined by OR in the final DNF formula (alternative regulation).
 
-        White / BASIC_FAMILY_COLOR edges are each treated as independent clauses (each gets a fresh module 
-        index even if multiple white edges hit the same target).
+        White / BASIC_FAMILY_COLOR edges pointing to the same target all share the SAME clause index
+        (cooperative regulation: all white edges are AND'd together into one clause).
+        Only when non-white family colors are present does OR-separation (alternative regulation) apply.
 
         Module sign follows edge sign exactly (from_ig convention):
           positive sign  ->  positive module index (+k)  ->  literal = src
@@ -2852,14 +2853,16 @@ class Network:
         edge_module_index = {}                                                              #(src_id, tgt_id) -> signed int
         white = tuple(BASIC_FAMILY_COLOR)
         for tgt, edges_in in incoming.items():
-            color_to_clause = {}                                                            #Non-white color tuple -> clause index (unsigned)
+            color_to_clause = {}                                                            #Color tuple -> clause index (unsigned)
             next_idx = [1]                                                                  #Mutable 1-based counter shared across this target
 
             for src, fc in edges_in:
-                if fc == white:                                                             #White: always a fresh independent clause
-                    clause_idx = next_idx[0]
-                    next_idx[0] += 1
-                else:                                                                       #Normalise float rounding before using as dict key
+                if fc == white:                                                             #White (no family assigned): all white edges share a single clause (cooperative AND)
+                    if white not in color_to_clause:                                        #Allocate a fresh clause index for the white group on first encounter
+                        color_to_clause[white] = next_idx[0]
+                        next_idx[0] += 1
+                    clause_idx = color_to_clause[white]
+                else:                                                                       #Non-white color: each distinct color is its own OR-clause (alternative regulation)
                     key = tuple(round(c, 6) for c in fc)
                     if key not in color_to_clause:
                         color_to_clause[key] = next_idx[0]
@@ -3703,7 +3706,7 @@ class Threader(QObject):
 
 
 
-#DEF:  Main
+#DEF: Main
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     boonify = Boonify()
