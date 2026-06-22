@@ -117,11 +117,12 @@
 <span class="sd">    Display an error message and exit in case of error (kind = &quot;ERROR&quot;).</span>
 
 <span class="sd">    :param msg: The error message.</span>
-<span class="sd">    :param arg: The argument of the error message (Default: &quot;&quot; no args).</span>
-<span class="sd">    :param kind: Type of error (Default: ERROR). Only the &quot;ERROR&quot; option will exit the application.</span>
 <span class="sd">    :type msg: str</span>
+<span class="sd">    :param arg: The argument of the error message (Default: &quot;&quot; no args).</span>
 <span class="sd">    :type arg: str</span>
+<span class="sd">    :param kind: Type of error (Default: ERROR). Only the &quot;ERROR&quot; option will exit the application.</span>
 <span class="sd">    :type kind: str</span>
+
 <span class="sd">    :return: None</span>
 <span class="sd">    :rtype: None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -139,7 +140,9 @@
 
 <span class="sd">    :param formula: The input dnf.</span>
 <span class="sd">    :type formula: Sympy formula</span>
-<span class="sd">    :return: the first symbol.&quot;&quot;&quot;</span>
+
+<span class="sd">    :return: The first symbol.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">BooleanFalse</span> <span class="o">|</span> <span class="n">BooleanTrue</span><span class="p">):</span>  <span class="c1"># The formula is reduced to a Boolean value, no symbols.</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># The formula has at least 1 symbol.</span>
@@ -155,8 +158,10 @@
 
 <span class="sd">    :param cnf: CNF formula</span>
 <span class="sd">    :type cnf: sympy formula</span>
-<span class="sd">    :return: sequence of clauses.</span>
-<span class="sd">    :rtype: Tuple[formula]&quot;&quot;&quot;</span>
+
+<span class="sd">    :return: Sequence of clauses.</span>
+<span class="sd">    :rtype: Tuple[formula]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cnf</span><span class="p">,</span> <span class="n">And</span><span class="p">):</span>  <span class="c1"># The cnf is plain (And of Or-clauses).</span>
         <span class="n">clauses</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">args</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cnf</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">BooleanFalse</span> <span class="o">|</span> <span class="n">BooleanTrue</span><span class="p">):</span>  <span class="c1"># The cnf is reduced to a boolean value.</span>
@@ -174,8 +179,10 @@
 
 <span class="sd">    :param  clause: The clause or cube.</span>
 <span class="sd">    :type clause: Sympy formula</span>
-<span class="sd">    :return: set of literals.</span>
-<span class="sd">    :rtype: Set&quot;&quot;&quot;</span>
+
+<span class="sd">    :return: Set of literals.</span>
+<span class="sd">    :rtype: Set</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clause</span><span class="p">,</span> <span class="n">Symbol</span> <span class="o">|</span> <span class="n">Not</span><span class="p">):</span>  <span class="c1"># clause reduced to a single literal.</span>
         <span class="n">literals_clause</span> <span class="o">=</span> <span class="p">{</span><span class="n">clause</span><span class="p">}</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clause</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">BooleanFalse</span> <span class="o">|</span> <span class="n">BooleanTrue</span><span class="p">):</span>  <span class="c1"># clause reduced to Boolean value.</span>
@@ -193,11 +200,12 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a string of a formula in nice form.</span>
 
 <span class="sd">    :param formula: The input formula.</span>
-<span class="sd">    :param style: The style of the logical operators (Default: LOGICAL)</span>
-<span class="sd">    :param depth: the current depth of the formula for setting parentheses (Default: 0)</span>
 <span class="sd">    :type formula: sympy formula</span>
+<span class="sd">    :param style: The style of the logical operators (Default: LOGICAL).</span>
 <span class="sd">    :type style: dict</span>
-<span class="sd">    :type depth: int&quot;&quot;&quot;</span>
+<span class="sd">    :param depth: The current depth of the formula for setting parentheses (Default: 0).</span>
+<span class="sd">    :type depth: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">BooleanFalse</span> <span class="o">|</span> <span class="n">BooleanTrue</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">style</span><span class="p">[</span><span class="n">formula</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">):</span>
@@ -231,8 +239,10 @@
 
 <span class="sd">    :param formula: The formula to convert.</span>
 <span class="sd">    :type formula: Sympy formula</span>
-<span class="sd">    :return: the equivalent z3 formula.</span>
-<span class="sd">    :rtype: Z3 formula&quot;&quot;&quot;</span>
+
+<span class="sd">    :return: The equivalent z3 formula.</span>
+<span class="sd">    :rtype: Z3 formula</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">formula</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">BooleanTrue</span><span class="p">):</span>
@@ -267,10 +277,12 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">newvar</span><span class="p">(</span><span class="n">initialize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new sympy symbol of the form &lt;prefix&gt;&lt;number&gt;. The prefix is given by TSEITIN constant.</span>
 
-<span class="sd">     :param initialize: Initialize the counter if the value is an integer or let the counter increment by 1 if it is set to None (Default value = None)</span>
-<span class="sd">     :type  initialize: int|None</span>
-<span class="sd">     :return: a Simpy symbol.</span>
-<span class="sd">     :rtype: Symbol&quot;&quot;&quot;</span>
+<span class="sd">    :param initialize: Initialize the counter if the value is an integer or let the counter increment by 1 if it is set to None (Default value = None)</span>
+<span class="sd">    :type  initialize: int|None</span>
+
+<span class="sd">    :return: A Simpy symbol.</span>
+<span class="sd">    :rtype: Symbol</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">_varcounter</span>
     <span class="k">if</span> <span class="n">initialize</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_varcounter</span> <span class="o">=</span> <span class="n">initialize</span>
@@ -288,8 +300,10 @@
 
 <span class="sd">    :param formula: The formula.</span>
 <span class="sd">    :type formula: Sympy formula</span>
-<span class="sd">    :return: a pair: Tseitin variable, Tseitin CNF.</span>
-<span class="sd">    :rtype: Tuple&quot;&quot;&quot;</span>
+
+<span class="sd">    :return: A pair: Tseitin variable, Tseitin CNF.</span>
+<span class="sd">    :rtype: Tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="nb">bool</span> <span class="o">|</span> <span class="n">BooleanFalse</span> <span class="o">|</span> <span class="n">BooleanTrue</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">formula</span><span class="p">,</span> <span class="kc">True</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formula</span><span class="p">,</span> <span class="n">Symbol</span><span class="p">):</span>
@@ -337,8 +351,10 @@
 
 <span class="sd">    :param formula: The formula to be converted.</span>
 <span class="sd">    :type formula: Sympy formula</span>
+
 <span class="sd">    :return: CNF formula.</span>
-<span class="sd">    :rtype: Sympy formula&quot;&quot;&quot;</span>
+<span class="sd">    :rtype: Sympy formula</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">newvar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># initialize the counter1</span>
     <span class="n">p</span><span class="p">,</span> <span class="n">f</span> <span class="o">=</span> <span class="n">tseitin</span><span class="p">(</span><span class="n">formula</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">And</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
@@ -351,9 +367,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Convert the formula to CNF. The method is well adapted to large formula.</span>
 
 <span class="sd">    :param formula: The formula to convert.</span>
-<span class="sd">    :param trace: Boolean flag if True trace the computational steps (Default value = False)</span>
 <span class="sd">    :type formula: sympy formula</span>
+<span class="sd">    :param trace: Boolean flag if True trace the computational steps (Default value = False)</span>
 <span class="sd">    :type trace: bool</span>
+
 <span class="sd">    :return: CNF formula</span>
 <span class="sd">    :rtype: sympy formula</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -402,15 +419,16 @@
 
 <span class="sd">    :param formula: The input formula. The formula does not need to be in CNF.</span>
 <span class="sd">    :type formula: Sympy formula</span>
-<span class="sd">    :param kept: Predicate selecting the literals that are kept in the solutions (Default: function discarding the Tseitin working variables)</span>
+<span class="sd">    :param kept: Predicate selecting the literals that are kept in the solutions (Default: function discarding the Tseitin working variables).</span>
 <span class="sd">    :type kept: function</span>
-<span class="sd">    :param max_solutions: maximal number of solutions (Default sys.maxsize)</span>
+<span class="sd">    :param max_solutions: Maximal number of solutions (Default sys.maxsize).</span>
 <span class="sd">    :type max_solutions: int</span>
-<span class="sd">    :param trace: a Boolean flag determining whether the trace showing the resolution is activated (Default: False).</span>
+<span class="sd">    :param trace: A Boolean flag determining whether the trace showing the resolution is activated (Default: False).</span>
 <span class="sd">    :type trace: bool</span>
 <span class="sd">    :param solver: The solver to use (Default: Pulp solver).</span>
 <span class="sd">    :type solver: solver function</span>
-<span class="sd">    :return: all the prime implicants in the form of a set of sets where each subset represents one prime implicant filtered by kept.</span>
+
+<span class="sd">    :return: All the prime implicants in the form of a set of sets where each subset represents one prime implicant filtered by kept.</span>
 <span class="sd">    :rtype: frozenset</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">prime_implicants_problem</span>
